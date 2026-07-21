@@ -70,7 +70,7 @@
     background: transparent;
     border: none;
     color: #9da8b9;
-    padding: 6px 14px;
+    padding: 8px 16px;
     font-size: 13px;
     font-weight: 600;
     border-radius: 6px;
@@ -80,6 +80,17 @@
   .btn-group button.active {
     background: #ffd700;
     color: #000;
+  }
+
+  /* Main Transaction Switcher */
+  .main-switch {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  .main-switch button {
+    flex: 1;
+    padding: 10px;
+    font-size: 15px;
   }
 
   /* TMR Layout Grid */
@@ -184,7 +195,7 @@
     <input type="number" id="rate24k" placeholder="e.g. 425000" value="425000" oninput="calculateRates()">
   </div>
 
-  <!-- Karat Comparison Table -->
+  <!-- Live Karat Table -->
   <h3>Live Karat Comparison</h3>
   <table>
     <thead>
@@ -202,6 +213,12 @@
   <hr>
 
   <h3>💍 Item Price Calculator</h3>
+
+  <!-- BUY / SELL MODE SWITCH -->
+  <div class="btn-group main-switch">
+    <button id="btnBuyMode" class="active" onclick="setTransactionMode('buy')">🛒 Buy Mode (Kharidari)</button>
+    <button id="btnSellMode" onclick="setTransactionMode('sell')">💰 Sell Mode (Bechna)</button>
+  </div>
 
   <!-- Karat Select -->
   <div class="input-group">
@@ -250,44 +267,64 @@
     </div>
   </div>
 
-  <!-- Wastage Input -->
-  <div class="input-group">
-    <label for="wastage">Wastage % (Kaat):</label>
-    <input type="number" id="wastage" placeholder="e.g. 10 or 15" value="10" step="0.5" oninput="calculateItemPrice()">
+  <!-- SELL MODE SPECIFIC OPTIONS -->
+  <div id="sellOptionsBox" style="display: none;">
+    <div class="input-group">
+      <label for="stoneWeight">Nag / Stone Weight Deduction (Grams):</label>
+      <input type="number" id="stoneWeight" placeholder="e.g. 0.2" value="" step="0.01" oninput="calculateItemPrice()">
+    </div>
+    <div class="input-group">
+      <label for="sellDiscountTola">Shop Buying Rate Discount Per Tola (PKR):</label>
+      <input type="number" id="sellDiscountTola" placeholder="e.g. 2000" value="" step="500" oninput="calculateItemPrice()">
+    </div>
   </div>
 
-  <!-- MAKING CHARGES MODE SWITCH -->
+  <!-- WASTAGE (KAAT) MODE SWITCH & INPUT -->
   <div class="input-group">
     <div class="switch-header">
-      <label>🔨 Making Charges / Mazdoori (PKR)</label>
+      <label id="wastageLabel">Wastage / Kaat</label>
       <div class="btn-group">
-        <button id="btnMakingFixed" class="active" onclick="setMakingMode('fixed')">Fixed Price (مجموعی)</button>
-        <button id="btnMakingPerGram" onclick="setMakingMode('perGram')">Per Gram (فی گرام)</button>
+        <button id="btnWastagePercent" class="active" onclick="setWastageMode('percent')">Percentage (%)</button>
+        <button id="btnWastageFixed" onclick="setWastageMode('fixed')">Fixed Price (PKR)</button>
       </div>
     </div>
-    <input type="number" id="makingValue" placeholder="e.g. 2000" value="0" oninput="calculateItemPrice()">
+    <input type="number" id="wastageValue" placeholder="e.g. 10 or 1000" value="" step="0.5" oninput="calculateItemPrice()">
   </div>
 
-  <!-- Tax Input -->
-  <div class="input-group">
-    <label for="taxRate">Tax % (GST / Govt Tax):</label>
-    <input type="number" id="taxRate" placeholder="e.g. 10" value="10" step="0.1" oninput="calculateItemPrice()">
-  </div>
+  <!-- BUY MODE SPECIFIC OPTIONS -->
+  <div id="buyOptionsBox">
+    <!-- MAKING CHARGES MODE SWITCH -->
+    <div class="input-group">
+      <div class="switch-header">
+        <label>🔨 Making Charges / Mazdoori (PKR)</label>
+        <div class="btn-group">
+          <button id="btnMakingFixed" class="active" onclick="setMakingMode('fixed')">Fixed Price (مجموعی)</button>
+          <button id="btnMakingPerGram" onclick="setMakingMode('perGram')">Per Gram (فی گرام)</button>
+        </div>
+      </div>
+      <input type="number" id="makingValue" placeholder="e.g. 2000" value="" oninput="calculateItemPrice()">
+    </div>
 
-  <!-- Tax Checkbox (Default ON) -->
-  <div class="checkbox-group">
-    <input type="checkbox" id="taxOnSubtotal" checked onchange="calculateItemPrice()">
-    <label for="taxOnSubtotal">Apply Tax on Whole Subtotal (Gold + Wastage + Making)</label>
+    <!-- Tax Input -->
+    <div class="input-group">
+      <label for="taxRate">Tax % (GST / Govt Tax):</label>
+      <input type="number" id="taxRate" placeholder="e.g. 10" value="" step="0.1" oninput="calculateItemPrice()">
+    </div>
+
+    <!-- Tax Checkbox -->
+    <div class="checkbox-group">
+      <input type="checkbox" id="taxOnSubtotal" checked onchange="calculateItemPrice()">
+      <label for="taxOnSubtotal">Apply Tax on Whole Subtotal (Gold + Wastage + Making)</label>
+    </div>
   </div>
 
   <!-- Result Box -->
   <div class="result-box">
-    <div class="result-title">Total Estimated Price</div>
+    <div class="result-title" id="resultTitle">Total Estimated Price</div>
     <div class="result-value" id="finalPrice">Rs. 0</div>
     <div class="breakdown" id="priceBreakdown"></div>
   </div>
 </div>
-
 
 <script>
   const TOLA_GRAMS = 11.664;
@@ -295,8 +332,42 @@
   const RATI_PER_MASHA = 8;
   const RATI_PER_TOLA = 96;
 
-  let weightMode = 'gram'; // 'gram' or 'tmr'
-  let makingMode = 'fixed'; // 'fixed' or 'perGram'
+  let transactionMode = 'buy'; // 'buy' or 'sell'
+  let weightMode = 'gram';      // 'gram' or 'tmr'
+  let wastageMode = 'percent';  // 'percent' or 'fixed'
+  let makingMode = 'fixed';      // 'fixed' or 'perGram'
+
+  function setTransactionMode(mode) {
+    transactionMode = mode;
+    document.getElementById('btnBuyMode').classList.toggle('active', mode === 'buy');
+    document.getElementById('btnSellMode').classList.toggle('active', mode === 'sell');
+
+    const buyBox = document.getElementById('buyOptionsBox');
+    const sellBox = document.getElementById('sellOptionsBox');
+    const wastageLabel = document.getElementById('wastageLabel');
+    const resultTitle = document.getElementById('resultTitle');
+
+    if (mode === 'buy') {
+      buyBox.style.display = 'block';
+      sellBox.style.display = 'none';
+      wastageLabel.innerText = 'Wastage (Kaat Add)';
+      resultTitle.innerText = 'Total Customer Pay Amount (Buy)';
+    } else {
+      buyBox.style.display = 'none';
+      sellBox.style.display = 'block';
+      wastageLabel.innerText = 'Kaat / Deduction';
+      resultTitle.innerText = 'Total Customer Receive Amount (Sell)';
+    }
+
+    calculateItemPrice();
+  }
+
+  function setWastageMode(mode) {
+    wastageMode = mode;
+    document.getElementById('btnWastagePercent').classList.toggle('active', mode === 'percent');
+    document.getElementById('btnWastageFixed').classList.toggle('active', mode === 'fixed');
+    calculateItemPrice();
+  }
 
   function setWeightMode(mode) {
     weightMode = mode;
@@ -316,7 +387,6 @@
       gramBox.style.display = 'none';
       tmrBox.style.display = 'block';
       
-      // Auto-fill TMR based on current gram input if TMR is empty
       const currentGram = parseFloat(document.getElementById('itemWeightGram').value) || 0;
       if (currentGram > 0 && parseFloat(document.getElementById('inputTola').value) === 0) {
         syncGramsToTMR(currentGram);
@@ -325,7 +395,6 @@
     calculateItemPrice();
   }
 
-  // Convert Grams to TMR automatically for better UX
   function syncGramsToTMR(grams) {
     const totalTolas = grams / TOLA_GRAMS;
     const tola = Math.floor(totalTolas);
@@ -379,68 +448,108 @@
   }
 
   function calculateItemPrice() {
-    const rate24k = parseFloat(document.getElementById('rate24k').value) || 0;
-    const rate24kGram = rate24k / TOLA_GRAMS;
+    const marketRate24k = parseFloat(document.getElementById('rate24k').value) || 0;
     
+    let effective24kRate = marketRate24k;
+    if (transactionMode === 'sell') {
+      const discountTola = parseFloat(document.getElementById('sellDiscountTola').value) || 0;
+      effective24kRate = Math.max(0, marketRate24k - discountTola);
+    }
+
+    const rate24kGram = effective24kRate / TOLA_GRAMS;
     const selectedKarat = parseFloat(document.getElementById('selectKarat').value) || 24;
     const purity = selectedKarat / 24;
 
     // Weight Calculation
-    let weightGrams = 0;
+    let grossGrams = 0;
     if (weightMode === 'gram') {
-      weightGrams = parseFloat(document.getElementById('itemWeightGram').value) || 0;
+      grossGrams = parseFloat(document.getElementById('itemWeightGram').value) || 0;
     } else {
       const tola = parseFloat(document.getElementById('inputTola').value) || 0;
       const masha = parseFloat(document.getElementById('inputMasha').value) || 0;
       const rati = parseFloat(document.getElementById('inputRati').value) || 0;
 
       const totalTolas = tola + (masha / MASHA_PER_TOLA) + (rati / RATI_PER_TOLA);
-      weightGrams = totalTolas * TOLA_GRAMS;
+      grossGrams = totalTolas * TOLA_GRAMS;
       
       const badge = document.getElementById('convertedGrams');
-      if (badge) badge.innerText = weightGrams.toFixed(3);
+      if (badge) badge.innerText = grossGrams.toFixed(3);
     }
 
-    // Gold + Wastage Calculation
-    const wastagePercent = parseFloat(document.getElementById('wastage').value) || 0;
+    let stoneDeduction = 0;
+    if (transactionMode === 'sell') {
+      stoneDeduction = parseFloat(document.getElementById('stoneWeight').value) || 0;
+    }
+    const netGrams = Math.max(0, grossGrams - stoneDeduction);
+
     const karatGramPrice = rate24kGram * purity;
-    const rawGoldPrice = weightGrams * karatGramPrice;
-    const wastageAmount = rawGoldPrice * (wastagePercent / 100);
+    const rawGoldPrice = netGrams * karatGramPrice;
 
-    // Making Charges Calculation
-    const makingInputValue = parseFloat(document.getElementById('makingValue').value) || 0;
-    const totalMaking = makingMode === 'fixed' ? makingInputValue : (makingInputValue * weightGrams);
+    // Wastage / Kaat Calculation
+    const wastageInputValue = parseFloat(document.getElementById('wastageValue').value) || 0;
+    let wastageAmount = 0;
+    let wastageLabelMode = '';
 
-    // Tax Calculation
-    const taxPercent = parseFloat(document.getElementById('taxRate').value) || 0;
-    const isTaxOnSubtotal = document.getElementById('taxOnSubtotal').checked;
+    if (wastageMode === 'percent') {
+      wastageAmount = rawGoldPrice * (wastageInputValue / 100);
+      wastageLabelMode = `${wastageInputValue}%`;
+    } else {
+      wastageAmount = wastageInputValue;
+      wastageLabelMode = `Rs. ${wastageInputValue.toLocaleString('en-PK')} Fixed`;
+    }
 
+    let totalMaking = 0;
     let taxAmount = 0;
     let totalPrice = 0;
 
-    if (isTaxOnSubtotal) {
-      const subTotal = rawGoldPrice + wastageAmount + totalMaking;
-      taxAmount = subTotal * (taxPercent / 100);
-      totalPrice = subTotal + taxAmount;
-    } else {
-      taxAmount = rawGoldPrice * (taxPercent / 100);
+    const breakdownBox = document.getElementById('priceBreakdown');
+
+    if (transactionMode === 'buy') {
+      const makingInputValue = parseFloat(document.getElementById('makingValue').value) || 0;
+      totalMaking = makingMode === 'fixed' ? makingInputValue : (makingInputValue * netGrams);
+
+      const taxPercent = parseFloat(document.getElementById('taxRate').value) || 0;
+      const isTaxOnSubtotal = document.getElementById('taxOnSubtotal').checked;
+
+      if (isTaxOnSubtotal) {
+        const subTotal = rawGoldPrice + wastageAmount + totalMaking;
+        taxAmount = subTotal * (taxPercent / 100);
+      } else {
+        taxAmount = rawGoldPrice * (taxPercent / 100);
+      }
+
       totalPrice = rawGoldPrice + wastageAmount + totalMaking + taxAmount;
+
+      const taxLabelMode = isTaxOnSubtotal ? 'Full Subtotal' : 'Raw Gold Only';
+      const makingLabelMode = makingMode === 'fixed' ? 'Fixed Total' : `Rs. ${makingInputValue} / gram`;
+
+      breakdownBox.innerHTML = `
+        • <strong>Selected Rate (${selectedKarat}K):</strong> Rs. ${Math.round(karatGramPrice).toLocaleString('en-PK')} / gram<br>
+        • <strong>Calculated Weight:</strong> ${netGrams.toFixed(3)} grams<br>
+        • <strong>Raw Gold Price:</strong> Rs. ${Math.round(rawGoldPrice).toLocaleString('en-PK')}<br>
+        • <strong>Wastage Amount (+${wastageLabelMode}):</strong> Rs. ${Math.round(wastageAmount).toLocaleString('en-PK')}<br>
+        • <strong>Making Charges (${makingLabelMode}):</strong> Rs. ${Math.round(totalMaking).toLocaleString('en-PK')}<br>
+        • <strong>Tax Amount (${taxPercent}% on ${taxLabelMode}):</strong> Rs. ${Math.round(taxAmount).toLocaleString('en-PK')}
+      `;
+
+    } else {
+      // Sell Mode Calculation
+      totalPrice = Math.max(0, rawGoldPrice - wastageAmount);
+
+      const discountTola = parseFloat(document.getElementById('sellDiscountTola').value) || 0;
+
+      breakdownBox.innerHTML = `
+        • <strong>Buying Rate (${selectedKarat}K):</strong> Rs. ${Math.round(karatGramPrice).toLocaleString('en-PK')} / gram <em>(-Rs. ${discountTola}/tola)</em><br>
+        • <strong>Gross Weight:</strong> ${grossGrams.toFixed(3)} grams<br>
+        • <strong>Nag / Stone Deduction:</strong> -${stoneDeduction.toFixed(3)} grams<br>
+        • <strong>Net Gold Weight:</strong> ${netGrams.toFixed(3)} grams<br>
+        • <strong>Base Gold Value:</strong> Rs. ${Math.round(rawGoldPrice).toLocaleString('en-PK')}<br>
+        • <strong>Kaat / Deduction (-${wastageLabelMode}):</strong> -Rs. ${Math.round(wastageAmount).toLocaleString('en-PK')}
+      `;
     }
 
     // UI Updates
     document.getElementById('finalPrice').innerText = 'Rs. ' + Math.round(totalPrice || 0).toLocaleString('en-PK');
-
-    const taxLabelMode = isTaxOnSubtotal ? 'Full Subtotal' : 'Raw Gold Only';
-    const makingLabelMode = makingMode === 'fixed' ? 'Fixed Total' : `Rs. ${makingInputValue} / gram`;
-
-    document.getElementById('priceBreakdown').innerHTML = `
-      • <strong>Selected Rate (${selectedKarat}K):</strong> Rs. ${Math.round(karatGramPrice).toLocaleString('en-PK')} / gram<br>
-      • <strong>Calculated Weight:</strong> ${weightGrams.toFixed(3)} grams<br>
-      • <strong>Raw Gold Price:</strong> Rs. ${Math.round(rawGoldPrice).toLocaleString('en-PK')}<br>
-      • <strong>Wastage Amount (${wastagePercent}%):</strong> Rs. ${Math.round(wastageAmount).toLocaleString('en-PK')}<br>
-      • <strong>Making Charges (${makingLabelMode}):</strong> Rs. ${Math.round(totalMaking).toLocaleString('en-PK')}<br>
-      • <strong>Tax Amount (${taxPercent}% on ${taxLabelMode}):</strong> Rs. ${Math.round(taxAmount).toLocaleString('en-PK')}
-    `;
   }
 
   // Run on page load
