@@ -137,7 +137,7 @@
     gap: 6px;
   }
 
-  /* Fixed Checkbox Styles */
+  /* Fixed Checkbox Styling */
   .checkbox-group {
     display: flex;
     align-items: center;
@@ -153,7 +153,7 @@
     width: 20px;
     height: 20px;
     cursor: pointer;
-    accent-color: #ffd700; /* Custom yellow check color */
+    accent-color: #ffd700;
     -webkit-appearance: checkbox;
   }
   .checkbox-group label {
@@ -349,11 +349,45 @@
 </div>
 
 <script>
+  // Dynamic Self-Updating Offline Cache Service Worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-      for (let registration of registrations) {
-        registration.unregister();
-      }
+    const swCode = `
+      const CACHE_NAME = 'gold-calc-v3';
+      self.addEventListener('install', (e) => {
+        self.skipWaiting();
+        e.waitUntil(
+          caches.open(CACHE_NAME).then((cache) => {
+            return cache.add(new Request(self.registration.scope, { cache: 'reload' }));
+          })
+        );
+      });
+      self.addEventListener('activate', (e) => {
+        e.waitUntil(
+          caches.keys().then((keys) => {
+            return Promise.all(keys.map((k) => k !== CACHE_NAME ? caches.delete(k) : null));
+          }).then(() => self.clients.claim())
+        );
+      });
+      self.addEventListener('fetch', (e) => {
+        e.respondWith(
+          fetch(e.request).then((res) => {
+            if (res.status === 200) {
+              const resClone = res.clone();
+              caches.open(CACHE_NAME).then((c) => c.put(e.request, resClone));
+            }
+            return res;
+          }).catch(() => caches.match(e.request))
+        );
+      });
+    `;
+
+    const blob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(blob);
+
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register(swUrl, { scope: './' }).then((reg) => {
+        reg.update();
+      }).catch(() => {});
     });
   }
 
@@ -612,33 +646,6 @@
     document.getElementById('btnMakingPerGram').addEventListener('click', () => setMakingMode('perGram'));
 
     calculateRates();
-  });
-</script>
-
-
-<script>
-  // 1. Force Clear Storage & Old SW
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      for (let registration of registrations) {
-        registration.unregister();
-      }
-    });
-  }
-
-  if ('caches' in window) {
-    caches.keys().then(names => {
-      for (let name of names) {
-        caches.delete(name);
-      }
-    });
-  }
-
-  // 2. Prevent Chrome Stale Reloading
-  window.addEventListener('pageshow', (event) => {
-    if (event.persisted) {
-      window.location.reload();
-    }
   });
 </script>
 </body>
