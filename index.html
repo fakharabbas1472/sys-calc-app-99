@@ -56,6 +56,15 @@
     outline: none;
   }
 
+  /* Live Text Helper Badge */
+  .words-helper {
+    font-size: 13px;
+    color: #00e676;
+    font-weight: 600;
+    margin-top: 5px;
+    display: block;
+  }
+
   /* Mode Switcher Buttons Style */
   .switch-header {
     display: flex;
@@ -188,6 +197,12 @@
     color: #ffd700;
     margin-top: 5px;
   }
+  .result-words {
+    font-size: 14px;
+    color: #00e676;
+    font-weight: bold;
+    margin-top: 4px;
+  }
   .breakdown {
     font-size: 13px;
     color: #ccc;
@@ -212,6 +227,7 @@
   <div class="input-group">
     <label for="rate24k">24 Karat Rate Per Tola (PKR):</label>
     <input type="number" id="rate24k" placeholder="e.g. 425000" value="425000" oninput="calculateRates()">
+    <span class="words-helper" id="rate24kWords">🏷️ 4 Lakh 25 Hazar PKR</span>
   </div>
 
   <!-- Live Karat Table -->
@@ -235,8 +251,8 @@
 
   <!-- BUY / SELL MODE SWITCH -->
   <div class="btn-group main-switch">
-    <button id="btnBuyMode" class="active" onclick="setTransactionMode('buy')">🛒 Buy Mode (Kharidari)</button>
-    <button id="btnSellMode" onclick="setTransactionMode('sell')">💰 Sell Mode (Bechna)</button>
+    <button id="btnBuyMode" class="active" onclick="setTransactionMode('buy')">🛒 Buy Mode</button>
+    <button id="btnSellMode" onclick="setTransactionMode('sell')">💰 Sell Mode</button>
   </div>
 
   <!-- Custom Karat Input -->
@@ -255,7 +271,7 @@
     <div class="switch-header">
       <label>⚖️ Weight Input Mode</label>
       <div class="btn-group">
-        <button id="btnGram" class="active" onclick="setWeightMode('gram')">Grams (g)</button>
+        <button id="btnGram" class="active" onclick="setWeightMode('gram')">Grams</button>
         <button id="btnTmr" onclick="setWeightMode('tmr')">TMR</button>
       </div>
     </div>
@@ -289,11 +305,11 @@
   <div id="sellOptionsBox" style="display: none;">
     <div class="input-group">
       <label for="stoneWeight">Nag / Stone Weight Deduction (Grams):</label>
-      <input type="number" id="stoneWeight" placeholder="e.g. 0.2" value="0" step="0.01" oninput="calculateItemPrice()">
+      <input type="number" id="stoneWeight" placeholder="e.g. 0.2" value="" step="0.01" oninput="calculateItemPrice()">
     </div>
     <div class="input-group">
       <label for="sellDiscountTola">Shop Buying Rate Discount Per Tola (PKR):</label>
-      <input type="number" id="sellDiscountTola" placeholder="e.g. 2000" value="2000" step="500" oninput="calculateItemPrice()">
+      <input type="number" id="sellDiscountTola" placeholder="e.g. 2000" value="" step="500" oninput="calculateItemPrice()">
     </div>
   </div>
 
@@ -306,7 +322,7 @@
         <button id="btnWastageFixed" onclick="setWastageMode('fixed')">Fixed Price (PKR)</button>
       </div>
     </div>
-    <input type="number" id="wastageValue" placeholder="e.g. 10 or 1000" value="10" step="0.5" oninput="calculateItemPrice()">
+    <input type="number" id="wastageValue" placeholder="e.g. 10 or 1000" value="" step="0.5" oninput="calculateItemPrice()">
   </div>
 
   <!-- BUY MODE SPECIFIC OPTIONS -->
@@ -316,17 +332,17 @@
       <div class="switch-header">
         <label>🔨 Making Charges / Mazdoori (PKR)</label>
         <div class="btn-group">
-          <button id="btnMakingFixed" class="active" onclick="setMakingMode('fixed')">Fixed Price (مجموعی)</button>
-          <button id="btnMakingPerGram" onclick="setMakingMode('perGram')">Per Gram (فی گرام)</button>
+          <button id="btnMakingFixed" class="active" onclick="setMakingMode('fixed')">Fixed Price</button>
+          <button id="btnMakingPerGram" onclick="setMakingMode('perGram')">Per Gram</button>
         </div>
       </div>
-      <input type="number" id="makingValue" placeholder="e.g. 2000" value="0" oninput="calculateItemPrice()">
+      <input type="number" id="makingValue" placeholder="e.g. 2000" value="" oninput="calculateItemPrice()">
     </div>
 
     <!-- Tax Input -->
     <div class="input-group">
       <label for="taxRate">Tax % (GST / Govt Tax):</label>
-      <input type="number" id="taxRate" placeholder="e.g. 10" value="10" step="0.1" oninput="calculateItemPrice()">
+      <input type="number" id="taxRate" placeholder="e.g. 10" value="" step="0.1" oninput="calculateItemPrice()">
     </div>
 
     <!-- Tax Checkbox -->
@@ -340,6 +356,7 @@
   <div class="result-box">
     <div class="result-title" id="resultTitle">Total Estimated Price</div>
     <div class="result-value" id="finalPrice">Rs. 0</div>
+    <div class="result-words" id="finalPriceWords"></div>
     <div class="breakdown" id="priceBreakdown"></div>
   </div>
 </div>
@@ -354,6 +371,32 @@
   let weightMode = 'gram';      
   let wastageMode = 'percent';  
   let makingMode = 'fixed';      
+
+  // Pak/Ind Number System to Words (Crore, Lakh, Hazar)
+  function formatAmountInWords(num) {
+    num = Math.round(num);
+    if (!num || num <= 0) return '';
+    
+    let words = [];
+    
+    const crore = Math.floor(num / 10000000);
+    num %= 10000000;
+    
+    const lakh = Math.floor(num / 100000);
+    num %= 100000;
+    
+    const hazar = Math.floor(num / 1000);
+    num %= 1000;
+    
+    const remaining = num;
+
+    if (crore > 0) words.push(`${crore} Crore`);
+    if (lakh > 0) words.push(`${lakh} Lakh`);
+    if (hazar > 0) words.push(`${hazar} Hazar`);
+    if (remaining > 0 && words.length === 0) words.push(`${remaining}`);
+
+    return words.join(' ') + ' PKR';
+  }
 
   function setTransactionMode(mode) {
     transactionMode = mode;
@@ -438,6 +481,11 @@
 
   function calculateRates() {
     const rate24k = parseFloat(document.getElementById('rate24k').value) || 0;
+    
+    // Update Rate Input Helper Badge
+    const rateWords = formatAmountInWords(rate24k);
+    document.getElementById('rate24kWords').innerText = rateWords ? `🏷️ ${rateWords}` : '';
+
     const rate24kGram = rate24k / TOLA_GRAMS;
 
     const karats = [
@@ -579,6 +627,7 @@
 
     // UI Updates
     document.getElementById('finalPrice').innerText = 'Rs. ' + Math.round(totalPrice || 0).toLocaleString('en-PK');
+    document.getElementById('finalPriceWords').innerText = formatAmountInWords(totalPrice);
   }
 
   // Run on page load
