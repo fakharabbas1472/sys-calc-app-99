@@ -3,28 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="google" content="notranslate">
 <meta name="robots" content="noindex, nofollow">
 <title>Advanced Gold Rate & Item Price Calculator</title>
 
-<!-- PWA Manifest Data URI for Offline App Support -->
-<link rel="manifest" href='data:application/manifest+json,{"name":"Gold Calculator","short_name":"GoldCalc","start_url":".","display":"standalone","background_color":"#0b0f19","theme_color":"#0b0f19","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2683/2683058.png","sizes":"512x512","type":"image/png"}]}'>
-
 <style>
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: #0b0f19;
     color: #e0e6ed;
     margin: 0;
-    padding: 20px;
+    padding: 15px;
   }
   .container {
     max-width: 580px;
     margin: 0 auto;
     background: #111827;
-    padding: 25px;
+    padding: 20px;
     border-radius: 14px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     border: 1px solid #1f293d;
@@ -32,7 +31,8 @@
   h2, h3 {
     color: #ffd700;
     text-align: center;
-    margin-bottom: 20px;
+    margin-top: 10px;
+    margin-bottom: 15px;
   }
   .input-group {
     margin-bottom: 15px;
@@ -44,7 +44,9 @@
     color: #9da8b9;
     font-size: 14px;
   }
-  input, select {
+  
+  /* Text and Number Inputs Only */
+  input[type="number"], input[type="text"], select {
     width: 100%;
     padding: 12px;
     border-radius: 8px;
@@ -52,14 +54,13 @@
     background: #1a2332;
     color: #fff;
     font-size: 16px;
-    box-sizing: border-box;
+    -webkit-appearance: none;
   }
-  input:focus, select:focus {
+  input[type="number"]:focus, input[type="text"]:focus, select:focus {
     border-color: #ffd700;
     outline: none;
   }
 
-  /* Live Text Helper Badge */
   .words-helper {
     font-size: 13px;
     color: #00e676;
@@ -68,7 +69,6 @@
     display: block;
   }
 
-  /* Mode Switcher Buttons Style */
   .switch-header {
     display: flex;
     justify-content: space-between;
@@ -86,19 +86,18 @@
     background: transparent;
     border: none;
     color: #9da8b9;
-    padding: 8px 16px;
+    padding: 8px 14px;
     font-size: 13px;
     font-weight: 600;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s;
+    touch-action: manipulation;
   }
   .btn-group button.active {
     background: #ffd700;
     color: #000;
   }
 
-  /* Main Transaction Switcher */
   .main-switch {
     width: 100%;
     margin-bottom: 20px;
@@ -109,7 +108,6 @@
     font-size: 15px;
   }
 
-  /* TMR Layout Grid */
   .tmr-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -139,10 +137,11 @@
     gap: 6px;
   }
 
+  /* Fixed Checkbox Styles */
   .checkbox-group {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     margin-top: 10px;
     margin-bottom: 15px;
     background: #1a2332;
@@ -150,36 +149,37 @@
     border-radius: 8px;
     border: 1px solid #2d3748;
   }
-  .checkbox-group input {
-    width: auto;
+  .checkbox-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
     cursor: pointer;
+    accent-color: #ffd700; /* Custom yellow check color */
+    -webkit-appearance: checkbox;
   }
   .checkbox-group label {
     margin-bottom: 0;
     cursor: pointer;
     font-size: 13px;
     color: #ffd700;
+    line-height: 1.3;
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    margin: 20px 0;
+    margin: 15px 0;
     background: #1a2332;
     border-radius: 8px;
     overflow: hidden;
   }
   th, td {
-    padding: 12px;
+    padding: 10px;
     text-align: center;
     border-bottom: 1px solid #2d3748;
   }
   th {
     background-color: #ffd700;
     color: #000;
-  }
-  tr:last-child td {
-    border-bottom: none;
   }
 
   .result-box {
@@ -195,7 +195,7 @@
     color: #a0a0a0;
   }
   .result-value {
-    font-size: 30px;
+    font-size: 28px;
     font-weight: bold;
     color: #ffd700;
     margin-top: 5px;
@@ -217,7 +217,7 @@
     border: 0;
     height: 1px;
     background: #2d3748;
-    margin: 25px 0;
+    margin: 20px 0;
   }
 </style>
 </head>
@@ -226,14 +226,12 @@
 <div class="container notranslate">
   <h2>🪙 Gold Rate Calculator</h2>
 
-  <!-- 24K Rate Input -->
   <div class="input-group">
     <label for="rate24k">24 Karat Rate Per Tola (PKR):</label>
-    <input type="number" id="rate24k" inputmode="decimal" autocomplete="off" placeholder="e.g. 425000" value="425000" oninput="calculateRates()">
+    <input type="number" id="rate24k" inputmode="decimal" autocomplete="off" value="425000">
     <span class="words-helper" id="rate24kWords">🏷️ 4 Lakh 25 Hazar PKR</span>
   </div>
 
-  <!-- Live Karat Table -->
   <h3>Live Karat Comparison</h3>
   <table>
     <thead>
@@ -243,119 +241,105 @@
         <th>Per Gram (PKR)</th>
       </tr>
     </thead>
-    <tbody id="karatTable">
-      <!-- Populated via JS -->
-    </tbody>
+    <tbody id="karatTable"></tbody>
   </table>
 
   <hr>
 
   <h3>💍 Item Price Calculator</h3>
 
-  <!-- BUY / SELL MODE SWITCH -->
   <div class="btn-group main-switch">
-    <button id="btnBuyMode" class="active" onclick="setTransactionMode('buy')">🛒 Buy Mode</button>
-    <button id="btnSellMode" onclick="setTransactionMode('sell')">💰 Sell Mode</button>
+    <button id="btnBuyMode" class="active" type="button">🛒 Buy Mode</button>
+    <button id="btnSellMode" type="button">💰 Sell Mode</button>
   </div>
 
-  <!-- Custom Karat Input -->
   <div class="input-group">
-    <label for="inputKarat">Karat Input Karein (e.g. 21, 22, 18, 15):</label>
-    <input type="number" id="inputKarat" inputmode="decimal" autocomplete="off" placeholder="e.g. 21" value="21" min="1" max="24" step="0.1" oninput="calculateItemPrice()">
-    <div class="rate-info-badge" id="karatRateBadge">
+    <label for="inputKarat">Karat Input Karein (e.g. 21, 22, 18):</label>
+    <input type="number" id="inputKarat" inputmode="decimal" autocomplete="off" value="21" min="1" max="24" step="0.1">
+    <div class="rate-info-badge">
       <span>Purity: <strong id="karatPurityDisplay">87.50%</strong></span>
       <span>Tola: <strong id="karatTolaDisplay">Rs. 0</strong></span>
       <span>Gram: <strong id="karatGramDisplay">Rs. 0</strong></span>
     </div>
   </div>
 
-  <!-- WEIGHT INPUT MODE SWITCH -->
   <div class="input-group">
     <div class="switch-header">
       <label>⚖️ Weight Input Mode</label>
       <div class="btn-group">
-        <button id="btnGram" class="active" onclick="setWeightMode('gram')">Grams</button>
-        <button id="btnTmr" onclick="setWeightMode('tmr')">TMR</button>
+        <button id="btnGram" class="active" type="button">Grams</button>
+        <button id="btnTmr" type="button">TMR</button>
       </div>
     </div>
 
-    <!-- Gram Mode Input -->
     <div id="gramInputBox">
-      <input type="number" id="itemWeightGram" inputmode="decimal" autocomplete="off" placeholder="e.g. 2.85" value="2.85" step="0.01" oninput="calculateItemPrice()">
+      <input type="number" id="itemWeightGram" inputmode="decimal" autocomplete="off" value="2.85" step="0.01">
     </div>
 
-    <!-- TMR Mode Inputs -->
     <div id="tmrInputBox" style="display: none;">
       <div class="converted-grams-badge">Total: <span id="convertedGrams">0.000</span> g</div>
       <div class="tmr-grid">
         <div>
           <label>Tola</label>
-          <input type="number" id="inputTola" inputmode="decimal" autocomplete="off" placeholder="Tola" value="0" oninput="calculateItemPrice()">
+          <input type="number" id="inputTola" inputmode="decimal" autocomplete="off" value="0">
         </div>
         <div>
           <label>Masha</label>
-          <input type="number" id="inputMasha" inputmode="decimal" autocomplete="off" placeholder="Masha" value="4" oninput="calculateItemPrice()">
+          <input type="number" id="inputMasha" inputmode="decimal" autocomplete="off" value="4">
         </div>
         <div>
           <label>Rati</label>
-          <input type="number" id="inputRati" inputmode="decimal" autocomplete="off" placeholder="Rati" value="2.5" oninput="calculateItemPrice()">
+          <input type="number" id="inputRati" inputmode="decimal" autocomplete="off" value="2.5">
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SELL MODE SPECIFIC OPTIONS -->
   <div id="sellOptionsBox" style="display: none;">
     <div class="input-group">
       <label for="stoneWeight">Nag / Stone Weight Deduction (Grams):</label>
-      <input type="number" id="stoneWeight" inputmode="decimal" autocomplete="off" placeholder="e.g. 0.2" value="" step="0.01" oninput="calculateItemPrice()">
+      <input type="number" id="stoneWeight" inputmode="decimal" autocomplete="off" value="" step="0.01">
     </div>
     <div class="input-group">
       <label for="sellDiscountTola">Shop Buying Rate Discount Per Tola (PKR):</label>
-      <input type="number" id="sellDiscountTola" inputmode="decimal" autocomplete="off" placeholder="e.g. 2000" value="" step="500" oninput="calculateItemPrice()">
+      <input type="number" id="sellDiscountTola" inputmode="decimal" autocomplete="off" value="" step="500">
     </div>
   </div>
 
-  <!-- WASTAGE (KAAT) MODE SWITCH & INPUT -->
   <div class="input-group">
     <div class="switch-header">
       <label id="wastageLabel">Wastage / Kaat</label>
       <div class="btn-group">
-        <button id="btnWastagePercent" class="active" onclick="setWastageMode('percent')">Percentage (%)</button>
-        <button id="btnWastageFixed" onclick="setWastageMode('fixed')">Fixed Price (PKR)</button>
+        <button id="btnWastagePercent" class="active" type="button">Percentage (%)</button>
+        <button id="btnWastageFixed" type="button">Fixed Price (PKR)</button>
       </div>
     </div>
-    <input type="number" id="wastageValue" inputmode="decimal" autocomplete="off" placeholder="e.g. 10 or 1000" value="" step="0.5" oninput="calculateItemPrice()">
+    <input type="number" id="wastageValue" inputmode="decimal" autocomplete="off" value="" step="0.5">
   </div>
 
-  <!-- BUY MODE SPECIFIC OPTIONS -->
   <div id="buyOptionsBox">
-    <!-- MAKING CHARGES MODE SWITCH -->
     <div class="input-group">
       <div class="switch-header">
         <label>🔨 Making Charges / Mazdoori (PKR)</label>
         <div class="btn-group">
-          <button id="btnMakingFixed" class="active" onclick="setMakingMode('fixed')">Fixed Price</button>
-          <button id="btnMakingPerGram" onclick="setMakingMode('perGram')">Per Gram</button>
+          <button id="btnMakingFixed" class="active" type="button">Fixed Price</button>
+          <button id="btnMakingPerGram" type="button">Per Gram</button>
         </div>
       </div>
-      <input type="number" id="makingValue" inputmode="decimal" autocomplete="off" placeholder="e.g. 2000" value="" oninput="calculateItemPrice()">
+      <input type="number" id="makingValue" inputmode="decimal" autocomplete="off" value="">
     </div>
 
-    <!-- Tax Input -->
     <div class="input-group">
       <label for="taxRate">Tax % (GST / Govt Tax):</label>
-      <input type="number" id="taxRate" inputmode="decimal" autocomplete="off" placeholder="e.g. 10" value="" step="0.1" oninput="calculateItemPrice()">
+      <input type="number" id="taxRate" inputmode="decimal" autocomplete="off" value="" step="0.1">
     </div>
 
-    <!-- Tax Checkbox -->
     <div class="checkbox-group">
-      <input type="checkbox" id="taxOnSubtotal" checked onchange="calculateItemPrice()">
+      <input type="checkbox" id="taxOnSubtotal" checked>
       <label for="taxOnSubtotal">Apply Tax on Whole Subtotal (Gold + Wastage + Making)</label>
     </div>
   </div>
 
-  <!-- Result Box -->
   <div class="result-box">
     <div class="result-title" id="resultTitle">Total Estimated Price</div>
     <div class="result-value" id="finalPrice">Rs. 0</div>
@@ -365,6 +349,14 @@
 </div>
 
 <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      for (let registration of registrations) {
+        registration.unregister();
+      }
+    });
+  }
+
   const TOLA_GRAMS = 11.664;
   const MASHA_PER_TOLA = 12;
   const RATI_PER_MASHA = 8;
@@ -375,22 +367,16 @@
   let wastageMode = 'percent';  
   let makingMode = 'fixed';      
 
-  // Pak/Ind Number System to Words (Crore, Lakh, Hazar)
   function formatAmountInWords(num) {
     num = Math.round(num);
     if (!num || num <= 0) return '';
-    
     let words = [];
-    
     const crore = Math.floor(num / 10000000);
     num %= 10000000;
-    
     const lakh = Math.floor(num / 100000);
     num %= 100000;
-    
     const hazar = Math.floor(num / 1000);
     num %= 1000;
-    
     const remaining = num;
 
     if (crore > 0) words.push(`${crore} Crore`);
@@ -403,8 +389,8 @@
 
   function setTransactionMode(mode) {
     transactionMode = mode;
-    document.getElementById('btnBuyMode').classList.toggle('active', mode === 'buy');
-    document.getElementById('btnSellMode').classList.toggle('active', mode === 'sell');
+    document.getElementById('btnBuyMode').className = mode === 'buy' ? 'active' : '';
+    document.getElementById('btnSellMode').className = mode === 'sell' ? 'active' : '';
 
     const buyBox = document.getElementById('buyOptionsBox');
     const sellBox = document.getElementById('sellOptionsBox');
@@ -422,35 +408,25 @@
       wastageLabel.innerText = 'Kaat / Deduction';
       resultTitle.innerText = 'Total Customer Receive Amount (Sell)';
     }
-
     calculateItemPrice();
   }
 
   function setWastageMode(mode) {
     wastageMode = mode;
-    document.getElementById('btnWastagePercent').classList.toggle('active', mode === 'percent');
-    document.getElementById('btnWastageFixed').classList.toggle('active', mode === 'fixed');
+    document.getElementById('btnWastagePercent').className = mode === 'percent' ? 'active' : '';
+    document.getElementById('btnWastageFixed').className = mode === 'fixed' ? 'active' : '';
     calculateItemPrice();
   }
 
   function setWeightMode(mode) {
     weightMode = mode;
-    const btnGram = document.getElementById('btnGram');
-    const btnTmr = document.getElementById('btnTmr');
-    const gramBox = document.getElementById('gramInputBox');
-    const tmrBox = document.getElementById('tmrInputBox');
+    document.getElementById('btnGram').className = mode === 'gram' ? 'active' : '';
+    document.getElementById('btnTmr').className = mode === 'tmr' ? 'active' : '';
+    
+    document.getElementById('gramInputBox').style.display = mode === 'gram' ? 'block' : 'none';
+    document.getElementById('tmrInputBox').style.display = mode === 'tmr' ? 'block' : 'none';
 
-    if (mode === 'gram') {
-      btnGram.classList.add('active');
-      btnTmr.classList.remove('active');
-      gramBox.style.display = 'block';
-      tmrBox.style.display = 'none';
-    } else {
-      btnGram.classList.remove('active');
-      btnTmr.classList.add('active');
-      gramBox.style.display = 'none';
-      tmrBox.style.display = 'block';
-      
+    if (mode === 'tmr') {
       const currentGram = parseFloat(document.getElementById('itemWeightGram').value) || 0;
       if (currentGram > 0 && parseFloat(document.getElementById('inputTola').value) === 0) {
         syncGramsToTMR(currentGram);
@@ -462,11 +438,9 @@
   function syncGramsToTMR(grams) {
     const totalTolas = grams / TOLA_GRAMS;
     const tola = Math.floor(totalTolas);
-    
     const remTola = totalTolas - tola;
     const totalMasha = remTola * MASHA_PER_TOLA;
     const masha = Math.floor(totalMasha);
-    
     const remMasha = totalMasha - masha;
     const rati = Math.round(remMasha * RATI_PER_MASHA * 10) / 10;
 
@@ -477,20 +451,17 @@
 
   function setMakingMode(mode) {
     makingMode = mode;
-    document.getElementById('btnMakingFixed').classList.toggle('active', mode === 'fixed');
-    document.getElementById('btnMakingPerGram').classList.toggle('active', mode === 'perGram');
+    document.getElementById('btnMakingFixed').className = mode === 'fixed' ? 'active' : '';
+    document.getElementById('btnMakingPerGram').className = mode === 'perGram' ? 'active' : '';
     calculateItemPrice();
   }
 
   function calculateRates() {
     const rate24k = parseFloat(document.getElementById('rate24k').value) || 0;
-    
-    // Update Rate Input Helper Badge
     const rateWords = formatAmountInWords(rate24k);
     document.getElementById('rate24kWords').innerText = rateWords ? `🏷️ ${rateWords}` : '';
 
     const rate24kGram = rate24k / TOLA_GRAMS;
-
     const karats = [
       { name: '24 Karat', purity: 1.0 },
       { name: '22 Karat', purity: 22 / 24 },
@@ -518,16 +489,14 @@
 
   function calculateItemPrice() {
     const marketRate24k = parseFloat(document.getElementById('rate24k').value) || 0;
-    
     let effective24kRate = marketRate24k;
+    
     if (transactionMode === 'sell') {
       const discountTola = parseFloat(document.getElementById('sellDiscountTola').value) || 0;
       effective24kRate = Math.max(0, marketRate24k - discountTola);
     }
 
     const rate24kGram = effective24kRate / TOLA_GRAMS;
-    
-    // Custom Karat Input Handling
     let selectedKarat = parseFloat(document.getElementById('inputKarat').value) || 24;
     if (selectedKarat > 24) selectedKarat = 24;
     if (selectedKarat < 0) selectedKarat = 0;
@@ -536,12 +505,10 @@
     const karatTolaPrice = effective24kRate * purity;
     const karatGramPrice = rate24kGram * purity;
 
-    // Update Karat Badge Display
     document.getElementById('karatPurityDisplay').innerText = (purity * 100).toFixed(2) + '%';
     document.getElementById('karatTolaDisplay').innerText = 'Rs. ' + Math.round(karatTolaPrice).toLocaleString('en-PK');
     document.getElementById('karatGramDisplay').innerText = 'Rs. ' + Math.round(karatGramPrice).toLocaleString('en-PK');
 
-    // Weight Calculation
     let grossGrams = 0;
     if (weightMode === 'gram') {
       grossGrams = parseFloat(document.getElementById('itemWeightGram').value) || 0;
@@ -549,23 +516,15 @@
       const tola = parseFloat(document.getElementById('inputTola').value) || 0;
       const masha = parseFloat(document.getElementById('inputMasha').value) || 0;
       const rati = parseFloat(document.getElementById('inputRati').value) || 0;
-
       const totalTolas = tola + (masha / MASHA_PER_TOLA) + (rati / RATI_PER_TOLA);
       grossGrams = totalTolas * TOLA_GRAMS;
-      
-      const badge = document.getElementById('convertedGrams');
-      if (badge) badge.innerText = grossGrams.toFixed(3);
+      document.getElementById('convertedGrams').innerText = grossGrams.toFixed(3);
     }
 
-    let stoneDeduction = 0;
-    if (transactionMode === 'sell') {
-      stoneDeduction = parseFloat(document.getElementById('stoneWeight').value) || 0;
-    }
+    let stoneDeduction = transactionMode === 'sell' ? (parseFloat(document.getElementById('stoneWeight').value) || 0) : 0;
     const netGrams = Math.max(0, grossGrams - stoneDeduction);
-
     const rawGoldPrice = netGrams * karatGramPrice;
 
-    // Wastage / Kaat Calculation
     const wastageInputValue = parseFloat(document.getElementById('wastageValue').value) || 0;
     let wastageAmount = 0;
     let wastageLabelMode = '';
@@ -599,7 +558,6 @@
       }
 
       totalPrice = rawGoldPrice + wastageAmount + totalMaking + taxAmount;
-
       const taxLabelMode = isTaxOnSubtotal ? 'Full Subtotal' : 'Raw Gold Only';
       const makingLabelMode = makingMode === 'fixed' ? 'Fixed Total' : `Rs. ${makingInputValue} / gram`;
 
@@ -613,9 +571,7 @@
       `;
 
     } else {
-      // Sell Mode Calculation
       totalPrice = Math.max(0, rawGoldPrice - wastageAmount);
-
       const discountTola = parseFloat(document.getElementById('sellDiscountTola').value) || 0;
 
       breakdownBox.innerHTML = `
@@ -628,13 +584,35 @@
       `;
     }
 
-    // UI Updates
     document.getElementById('finalPrice').innerText = 'Rs. ' + Math.round(totalPrice || 0).toLocaleString('en-PK');
     document.getElementById('finalPriceWords').innerText = formatAmountInWords(totalPrice);
   }
 
-  // Run on page load
-  calculateRates();
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('rate24k').addEventListener('input', calculateRates);
+    document.getElementById('inputKarat').addEventListener('input', calculateItemPrice);
+    document.getElementById('itemWeightGram').addEventListener('input', calculateItemPrice);
+    document.getElementById('inputTola').addEventListener('input', calculateItemPrice);
+    document.getElementById('inputMasha').addEventListener('input', calculateItemPrice);
+    document.getElementById('inputRati').addEventListener('input', calculateItemPrice);
+    document.getElementById('stoneWeight').addEventListener('input', calculateItemPrice);
+    document.getElementById('sellDiscountTola').addEventListener('input', calculateItemPrice);
+    document.getElementById('wastageValue').addEventListener('input', calculateItemPrice);
+    document.getElementById('makingValue').addEventListener('input', calculateItemPrice);
+    document.getElementById('taxRate').addEventListener('input', calculateItemPrice);
+    document.getElementById('taxOnSubtotal').addEventListener('change', calculateItemPrice);
+
+    document.getElementById('btnBuyMode').addEventListener('click', () => setTransactionMode('buy'));
+    document.getElementById('btnSellMode').addEventListener('click', () => setTransactionMode('sell'));
+    document.getElementById('btnGram').addEventListener('click', () => setWeightMode('gram'));
+    document.getElementById('btnTmr').addEventListener('click', () => setWeightMode('tmr'));
+    document.getElementById('btnWastagePercent').addEventListener('click', () => setWastageMode('percent'));
+    document.getElementById('btnWastageFixed').addEventListener('click', () => setWastageMode('fixed'));
+    document.getElementById('btnMakingFixed').addEventListener('click', () => setMakingMode('fixed'));
+    document.getElementById('btnMakingPerGram').addEventListener('click', () => setMakingMode('perGram'));
+
+    calculateRates();
+  });
 </script>
 </body>
 </html>
