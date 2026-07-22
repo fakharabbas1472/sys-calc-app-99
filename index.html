@@ -1,8 +1,11 @@
 <!DOCTYPE html>
-<html lang="ur">
+<html lang="ur" class="notranslate">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="google" content="notranslate">
 <meta name="robots" content="noindex, nofollow">
 <title>Advanced Gold Rate & Item Price Calculator</title>
 
@@ -218,15 +221,15 @@
   }
 </style>
 </head>
-<body>
+<body class="notranslate">
 
-<div class="container">
+<div class="container notranslate">
   <h2>🪙 Gold Rate Calculator</h2>
 
   <!-- 24K Rate Input -->
   <div class="input-group">
     <label for="rate24k">24 Karat Rate Per Tola (PKR):</label>
-    <input type="number" id="rate24k" placeholder="e.g. 425000" value="425000" oninput="calculateRates()">
+    <input type="number" id="rate24k" inputmode="decimal" autocomplete="off" placeholder="e.g. 425000" value="425000" oninput="calculateRates()">
     <span class="words-helper" id="rate24kWords">🏷️ 4 Lakh 25 Hazar PKR</span>
   </div>
 
@@ -258,7 +261,7 @@
   <!-- Custom Karat Input -->
   <div class="input-group">
     <label for="inputKarat">Karat Input Karein (e.g. 21, 22, 18, 15):</label>
-    <input type="number" id="inputKarat" placeholder="e.g. 21" value="21" min="1" max="24" step="0.1" oninput="calculateItemPrice()">
+    <input type="number" id="inputKarat" inputmode="decimal" autocomplete="off" placeholder="e.g. 21" value="21" min="1" max="24" step="0.1" oninput="calculateItemPrice()">
     <div class="rate-info-badge" id="karatRateBadge">
       <span>Purity: <strong id="karatPurityDisplay">87.50%</strong></span>
       <span>Tola: <strong id="karatTolaDisplay">Rs. 0</strong></span>
@@ -278,7 +281,7 @@
 
     <!-- Gram Mode Input -->
     <div id="gramInputBox">
-      <input type="number" id="itemWeightGram" placeholder="e.g. 2.85" value="2.85" step="0.01" oninput="calculateItemPrice()">
+      <input type="number" id="itemWeightGram" inputmode="decimal" autocomplete="off" placeholder="e.g. 2.85" value="2.85" step="0.01" oninput="calculateItemPrice()">
     </div>
 
     <!-- TMR Mode Inputs -->
@@ -287,15 +290,15 @@
       <div class="tmr-grid">
         <div>
           <label>Tola</label>
-          <input type="number" id="inputTola" placeholder="Tola" value="0" oninput="calculateItemPrice()">
+          <input type="number" id="inputTola" inputmode="decimal" autocomplete="off" placeholder="Tola" value="0" oninput="calculateItemPrice()">
         </div>
         <div>
           <label>Masha</label>
-          <input type="number" id="inputMasha" placeholder="Masha" value="4" oninput="calculateItemPrice()">
+          <input type="number" id="inputMasha" inputmode="decimal" autocomplete="off" placeholder="Masha" value="4" oninput="calculateItemPrice()">
         </div>
         <div>
           <label>Rati</label>
-          <input type="number" id="inputRati" placeholder="Rati" value="2.5" oninput="calculateItemPrice()">
+          <input type="number" id="inputRati" inputmode="decimal" autocomplete="off" placeholder="Rati" value="2.5" oninput="calculateItemPrice()">
         </div>
       </div>
     </div>
@@ -305,11 +308,11 @@
   <div id="sellOptionsBox" style="display: none;">
     <div class="input-group">
       <label for="stoneWeight">Nag / Stone Weight Deduction (Grams):</label>
-      <input type="number" id="stoneWeight" placeholder="e.g. 0.2" value="" step="0.01" oninput="calculateItemPrice()">
+      <input type="number" id="stoneWeight" inputmode="decimal" autocomplete="off" placeholder="e.g. 0.2" value="" step="0.01" oninput="calculateItemPrice()">
     </div>
     <div class="input-group">
       <label for="sellDiscountTola">Shop Buying Rate Discount Per Tola (PKR):</label>
-      <input type="number" id="sellDiscountTola" placeholder="e.g. 2000" value="" step="500" oninput="calculateItemPrice()">
+      <input type="number" id="sellDiscountTola" inputmode="decimal" autocomplete="off" placeholder="e.g. 2000" value="" step="500" oninput="calculateItemPrice()">
     </div>
   </div>
 
@@ -322,7 +325,7 @@
         <button id="btnWastageFixed" onclick="setWastageMode('fixed')">Fixed Price (PKR)</button>
       </div>
     </div>
-    <input type="number" id="wastageValue" placeholder="e.g. 10 or 1000" value="" step="0.5" oninput="calculateItemPrice()">
+    <input type="number" id="wastageValue" inputmode="decimal" autocomplete="off" placeholder="e.g. 10 or 1000" value="" step="0.5" oninput="calculateItemPrice()">
   </div>
 
   <!-- BUY MODE SPECIFIC OPTIONS -->
@@ -336,13 +339,13 @@
           <button id="btnMakingPerGram" onclick="setMakingMode('perGram')">Per Gram</button>
         </div>
       </div>
-      <input type="number" id="makingValue" placeholder="e.g. 2000" value="" oninput="calculateItemPrice()">
+      <input type="number" id="makingValue" inputmode="decimal" autocomplete="off" placeholder="e.g. 2000" value="" oninput="calculateItemPrice()">
     </div>
 
     <!-- Tax Input -->
     <div class="input-group">
       <label for="taxRate">Tax % (GST / Govt Tax):</label>
-      <input type="number" id="taxRate" placeholder="e.g. 10" value="" step="0.1" oninput="calculateItemPrice()">
+      <input type="number" id="taxRate" inputmode="decimal" autocomplete="off" placeholder="e.g. 10" value="" step="0.1" oninput="calculateItemPrice()">
     </div>
 
     <!-- Tax Checkbox -->
@@ -632,29 +635,6 @@
 
   // Run on page load
   calculateRates();
-
-  // SERVICE WORKER REGISTRATION FOR 100% OFFLINE SUPPORT
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      const swCode = `
-        const CACHE_NAME = 'gold-calc-v1';
-        self.addEventListener('install', (e) => {
-          e.waitUntil(
-            caches.open(CACHE_NAME).then((cache) => cache.addAll(['./', location.href]))
-          );
-          self.skipWaiting();
-        });
-        self.addEventListener('fetch', (e) => {
-          e.respondWith(
-            caches.match(e.request).then((res) => res || fetch(e.request))
-          );
-        });
-      `;
-      const blob = new Blob([swCode], { type: 'text/javascript' });
-      const swUrl = URL.createObjectURL(blob);
-      navigator.serviceWorker.register(swUrl).catch(() => {});
-    });
-  }
 </script>
 </body>
 </html>
