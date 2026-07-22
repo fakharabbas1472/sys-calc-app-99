@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>Advanced Gold Rate & Item Price Calculator</title>
+
+<!-- PWA Manifest Data URI for Offline App Support -->
+<link rel="manifest" href='data:application/manifest+json,{"name":"Gold Calculator","short_name":"GoldCalc","start_url":".","display":"standalone","background_color":"#0b0f19","theme_color":"#0b0f19","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2683/2683058.png","sizes":"512x512","type":"image/png"}]}'>
+
 <style>
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -106,6 +110,21 @@
     color: #ffd700;
     font-weight: bold;
     margin-bottom: 6px;
+  }
+
+  .rate-info-badge {
+    background: #1a2332;
+    border: 1px solid #2d3748;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #ffd700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .checkbox-group {
@@ -220,16 +239,15 @@
     <button id="btnSellMode" onclick="setTransactionMode('sell')">💰 Sell Mode (Bechna)</button>
   </div>
 
-  <!-- Karat Select -->
+  <!-- Custom Karat Input -->
   <div class="input-group">
-    <label for="selectKarat">Karat Select Karein:</label>
-    <select id="selectKarat" onchange="calculateItemPrice()">
-      <option value="24">24 Karat (100%)</option>
-      <option value="22">22 Karat (91.67%)</option>
-      <option value="21" selected>21 Karat (87.50%)</option>
-      <option value="18">18 Karat (75.00%)</option>
-      <option value="12">12 Karat (50.00%)</option>
-    </select>
+    <label for="inputKarat">Karat Input Karein (e.g. 21, 22, 18, 15):</label>
+    <input type="number" id="inputKarat" placeholder="e.g. 21" value="21" min="1" max="24" step="0.1" oninput="calculateItemPrice()">
+    <div class="rate-info-badge" id="karatRateBadge">
+      <span>Purity: <strong id="karatPurityDisplay">87.50%</strong></span>
+      <span>Tola: <strong id="karatTolaDisplay">Rs. 0</strong></span>
+      <span>Gram: <strong id="karatGramDisplay">Rs. 0</strong></span>
+    </div>
   </div>
 
   <!-- WEIGHT INPUT MODE SWITCH -->
@@ -271,11 +289,11 @@
   <div id="sellOptionsBox" style="display: none;">
     <div class="input-group">
       <label for="stoneWeight">Nag / Stone Weight Deduction (Grams):</label>
-      <input type="number" id="stoneWeight" placeholder="e.g. 0.2" value="" step="0.01" oninput="calculateItemPrice()">
+      <input type="number" id="stoneWeight" placeholder="e.g. 0.2" value="0" step="0.01" oninput="calculateItemPrice()">
     </div>
     <div class="input-group">
       <label for="sellDiscountTola">Shop Buying Rate Discount Per Tola (PKR):</label>
-      <input type="number" id="sellDiscountTola" placeholder="e.g. 2000" value="" step="500" oninput="calculateItemPrice()">
+      <input type="number" id="sellDiscountTola" placeholder="e.g. 2000" value="2000" step="500" oninput="calculateItemPrice()">
     </div>
   </div>
 
@@ -288,7 +306,7 @@
         <button id="btnWastageFixed" onclick="setWastageMode('fixed')">Fixed Price (PKR)</button>
       </div>
     </div>
-    <input type="number" id="wastageValue" placeholder="e.g. 10 or 1000" value="" step="0.5" oninput="calculateItemPrice()">
+    <input type="number" id="wastageValue" placeholder="e.g. 10 or 1000" value="10" step="0.5" oninput="calculateItemPrice()">
   </div>
 
   <!-- BUY MODE SPECIFIC OPTIONS -->
@@ -302,13 +320,13 @@
           <button id="btnMakingPerGram" onclick="setMakingMode('perGram')">Per Gram (فی گرام)</button>
         </div>
       </div>
-      <input type="number" id="makingValue" placeholder="e.g. 2000" value="" oninput="calculateItemPrice()">
+      <input type="number" id="makingValue" placeholder="e.g. 2000" value="0" oninput="calculateItemPrice()">
     </div>
 
     <!-- Tax Input -->
     <div class="input-group">
       <label for="taxRate">Tax % (GST / Govt Tax):</label>
-      <input type="number" id="taxRate" placeholder="e.g. 10" value="" step="0.1" oninput="calculateItemPrice()">
+      <input type="number" id="taxRate" placeholder="e.g. 10" value="10" step="0.1" oninput="calculateItemPrice()">
     </div>
 
     <!-- Tax Checkbox -->
@@ -332,10 +350,10 @@
   const RATI_PER_MASHA = 8;
   const RATI_PER_TOLA = 96;
 
-  let transactionMode = 'buy'; // 'buy' or 'sell'
-  let weightMode = 'gram';      // 'gram' or 'tmr'
-  let wastageMode = 'percent';  // 'percent' or 'fixed'
-  let makingMode = 'fixed';      // 'fixed' or 'perGram'
+  let transactionMode = 'buy'; 
+  let weightMode = 'gram';      
+  let wastageMode = 'percent';  
+  let makingMode = 'fixed';      
 
   function setTransactionMode(mode) {
     transactionMode = mode;
@@ -457,8 +475,20 @@
     }
 
     const rate24kGram = effective24kRate / TOLA_GRAMS;
-    const selectedKarat = parseFloat(document.getElementById('selectKarat').value) || 24;
+    
+    // Custom Karat Input Handling
+    let selectedKarat = parseFloat(document.getElementById('inputKarat').value) || 24;
+    if (selectedKarat > 24) selectedKarat = 24;
+    if (selectedKarat < 0) selectedKarat = 0;
+
     const purity = selectedKarat / 24;
+    const karatTolaPrice = effective24kRate * purity;
+    const karatGramPrice = rate24kGram * purity;
+
+    // Update Karat Badge Display
+    document.getElementById('karatPurityDisplay').innerText = (purity * 100).toFixed(2) + '%';
+    document.getElementById('karatTolaDisplay').innerText = 'Rs. ' + Math.round(karatTolaPrice).toLocaleString('en-PK');
+    document.getElementById('karatGramDisplay').innerText = 'Rs. ' + Math.round(karatGramPrice).toLocaleString('en-PK');
 
     // Weight Calculation
     let grossGrams = 0;
@@ -482,7 +512,6 @@
     }
     const netGrams = Math.max(0, grossGrams - stoneDeduction);
 
-    const karatGramPrice = rate24kGram * purity;
     const rawGoldPrice = netGrams * karatGramPrice;
 
     // Wastage / Kaat Calculation
@@ -554,6 +583,29 @@
 
   // Run on page load
   calculateRates();
+
+  // SERVICE WORKER REGISTRATION FOR 100% OFFLINE SUPPORT
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      const swCode = `
+        const CACHE_NAME = 'gold-calc-v1';
+        self.addEventListener('install', (e) => {
+          e.waitUntil(
+            caches.open(CACHE_NAME).then((cache) => cache.addAll(['./', location.href]))
+          );
+          self.skipWaiting();
+        });
+        self.addEventListener('fetch', (e) => {
+          e.respondWith(
+            caches.match(e.request).then((res) => res || fetch(e.request))
+          );
+        });
+      `;
+      const blob = new Blob([swCode], { type: 'text/javascript' });
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).catch(() => {});
+    });
+  }
 </script>
 </body>
 </html>
