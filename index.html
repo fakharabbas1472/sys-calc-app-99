@@ -614,5 +614,32 @@
     calculateRates();
   });
 </script>
+
+
+<script>
+  // 1. Force Clear Storage & Old SW
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      for (let registration of registrations) {
+        registration.unregister();
+      }
+    });
+  }
+
+  if ('caches' in window) {
+    caches.keys().then(names => {
+      for (let name of names) {
+        caches.delete(name);
+      }
+    });
+  }
+
+  // 2. Prevent Chrome Stale Reloading
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  });
+</script>
 </body>
 </html>
