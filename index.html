@@ -61,6 +61,32 @@
     outline: none;
   }
 
+  /* International Live Section Cards */
+  .intl-box {
+    background: #182232;
+    border: 1px solid #ffd700;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  .intl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .intl-sync-btn {
+    width: 100%;
+    background: #ffd700;
+    color: #000;
+    border: none;
+    padding: 10px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
   .words-helper {
     font-size: 13px;
     color: #00e676;
@@ -219,12 +245,60 @@
     background: #2d3748;
     margin: 20px 0;
   }
+  /* Section Separator Line */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #9da8b9;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 25px 0;
+  }
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px dashed #2d3748;
+  }
+  .section-divider:not(:empty)::before {
+    margin-right: 12px;
+  }
+  .section-divider:not(:empty)::after {
+    margin-left: 12px;
+  }
 </style>
 </head>
 <body class="notranslate">
 
 <div class="container notranslate">
   <h2>🪙 Gold Rate Calculator</h2>
+
+  <!-- International Ounce & Dollar Rate Section -->
+  <!-- International Ounce & Dollar Rate Section -->
+  <div class="intl-box">
+    <h3 style="margin-top:0; font-size:16px;">🌐 International Gold Rate ($/oz)</h3>
+    <div class="intl-grid">
+      <div>
+        <label for="goldOunceUsd">Gold Price ($/Ounce):</label>
+        <input type="number" id="goldOunceUsd" inputmode="decimal" autocomplete="off" value="2700" step="0.1">
+      </div>
+      <div>
+        <label for="usdPkrRate">USD Rate (PKR):</label>
+        <input type="number" id="usdPkrRate" inputmode="decimal" autocomplete="off" value="278.50" step="0.1">
+      </div>
+    </div>
+    <div class="rate-info-badge" style="margin-top:10px;">
+      <span>Per Tola ($): <strong id="tolaUsdDisplay">$0</strong></span>
+      <span>Calculated PKR: <strong id="tolaPkrDisplay">Rs. 0</strong></span>
+    </div>
+    <button type="button" id="btnSyncRate" class="intl-sync-btn">⚡ Apply Calculated Rate to Calculator</button>
+  </div>
+
+  <!-- Clear Separation Divider Line -->
+  <br><div class="section-divider">OR ENTER LOCAL RATE MANUALLY</div><br><br>
 
   <div class="input-group">
     <label for="rate24k">24 Karat Rate Per Tola (PKR):</label>
@@ -352,7 +426,7 @@
   // Dynamic Self-Updating Offline Cache Service Worker
   if ('serviceWorker' in navigator) {
     const swCode = `
-      const CACHE_NAME = 'gold-calc-v3';
+      const CACHE_NAME = 'gold-calc-v4';
       self.addEventListener('install', (e) => {
         self.skipWaiting();
         e.waitUntil(
@@ -392,6 +466,7 @@
   }
 
   const TOLA_GRAMS = 11.664;
+  const OUNCE_GRAMS = 31.1034768;
   const MASHA_PER_TOLA = 12;
   const RATI_PER_MASHA = 8;
   const RATI_PER_TOLA = 96;
@@ -419,6 +494,19 @@
     if (remaining > 0 && words.length === 0) words.push(`${remaining}`);
 
     return words.join(' ') + ' PKR';
+  }
+
+  function calculateIntlGold() {
+    const goldOunceUsd = parseFloat(document.getElementById('goldOunceUsd').value) || 0;
+    const usdPkr = parseFloat(document.getElementById('usdPkrRate').value) || 0;
+
+    const tolaInUsd = (goldOunceUsd / OUNCE_GRAMS) * TOLA_GRAMS;
+    const tolaInPkr = tolaInUsd * usdPkr;
+
+    document.getElementById('tolaUsdDisplay').innerText = '$' + tolaInUsd.toFixed(2);
+    document.getElementById('tolaPkrDisplay').innerText = 'Rs. ' + Math.round(tolaInPkr).toLocaleString('en-PK');
+
+    return Math.round(tolaInPkr);
   }
 
   function setTransactionMode(mode) {
@@ -623,6 +711,17 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('goldOunceUsd').addEventListener('input', calculateIntlGold);
+    document.getElementById('usdPkrRate').addEventListener('input', calculateIntlGold);
+
+    document.getElementById('btnSyncRate').addEventListener('click', () => {
+      const pkrTola = calculateIntlGold();
+      if (pkrTola > 0) {
+        document.getElementById('rate24k').value = pkrTola;
+        calculateRates();
+      }
+    });
+
     document.getElementById('rate24k').addEventListener('input', calculateRates);
     document.getElementById('inputKarat').addEventListener('input', calculateItemPrice);
     document.getElementById('itemWeightGram').addEventListener('input', calculateItemPrice);
@@ -645,6 +744,7 @@
     document.getElementById('btnMakingFixed').addEventListener('click', () => setMakingMode('fixed'));
     document.getElementById('btnMakingPerGram').addEventListener('click', () => setMakingMode('perGram'));
 
+    calculateIntlGold();
     calculateRates();
   });
 </script>
