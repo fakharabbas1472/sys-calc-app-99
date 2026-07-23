@@ -45,7 +45,7 @@
     font-size: 14px;
   }
   
-  /* Text and Number Inputs Only */
+  /* Text and Number Inputs */
   input[type="number"], input[type="text"], select {
     width: 100%;
     padding: 12px;
@@ -67,7 +67,7 @@
     border: 1px solid #ffd700;
     padding: 15px;
     border-radius: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
   }
   .intl-grid {
     display: grid;
@@ -85,6 +85,43 @@
     cursor: pointer;
     margin-top: 10px;
     font-size: 14px;
+  }
+
+  .live-link {
+    display: inline-block;
+    font-size: 11px;
+    color: #00e676;
+    text-decoration: none;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .live-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Section Separator Line */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #9da8b9;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 22px 0;
+  }
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px dashed #2d3748;
+  }
+  .section-divider:not(:empty)::before {
+    margin-right: 12px;
+  }
+  .section-divider:not(:empty)::after {
+    margin-left: 12px;
   }
 
   .words-helper {
@@ -140,14 +177,6 @@
     gap: 10px;
   }
 
-  .converted-grams-badge {
-    text-align: right;
-    font-size: 14px;
-    color: #ffd700;
-    font-weight: bold;
-    margin-bottom: 6px;
-  }
-
   .rate-info-badge {
     background: #1a2332;
     border: 1px solid #2d3748;
@@ -163,7 +192,29 @@
     gap: 6px;
   }
 
-  /* Fixed Checkbox Styling */
+  /* Preset Karat Buttons */
+  .preset-btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .preset-btns button {
+    flex: 1;
+    background: #1a2332;
+    border: 1px solid #2d3748;
+    color: #ffd700;
+    padding: 8px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .preset-btns button:active {
+    background: #ffd700;
+    color: #000;
+  }
+
+  /* Checkbox Styling */
   .checkbox-group {
     display: flex;
     align-items: center;
@@ -239,35 +290,40 @@
     line-height: 1.6;
     text-align: left;
   }
+  
+  .action-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+  }
+  .copy-btn {
+    flex: 2;
+    background: #10b981;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .reset-btn {
+    flex: 1;
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
   hr {
     border: 0;
     height: 1px;
     background: #2d3748;
     margin: 20px 0;
-  }
-  /* Section Separator Line */
-  .section-divider {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    color: #9da8b9;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin: 25px 0;
-  }
-  .section-divider::before,
-  .section-divider::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px dashed #2d3748;
-  }
-  .section-divider:not(:empty)::before {
-    margin-right: 12px;
-  }
-  .section-divider:not(:empty)::after {
-    margin-left: 12px;
   }
 </style>
 </head>
@@ -277,27 +333,27 @@
   <h2>🪙 Gold Rate Calculator</h2>
 
   <!-- International Ounce & Dollar Rate Section -->
-  <!-- International Ounce & Dollar Rate Section -->
   <div class="intl-box">
     <h3 style="margin-top:0; font-size:16px;">🌐 International Gold Rate ($/oz)</h3>
     <div class="intl-grid">
       <div>
         <label for="goldOunceUsd">Gold Price ($/Ounce):</label>
-        <input type="number" id="goldOunceUsd" inputmode="decimal" autocomplete="off" value="2700" step="0.1">
+        <input type="number" id="goldOunceUsd" inputmode="decimal" autocomplete="off" value="4000" step="0.1">
+        <a href="https://vunelix.com/symbols/XAUUSD?exchange=FX" target="_blank" class="live-link">🔴 Live Gold Rate Check</a>
       </div>
       <div>
         <label for="usdPkrRate">USD Rate (PKR):</label>
         <input type="number" id="usdPkrRate" inputmode="decimal" autocomplete="off" value="278.50" step="0.1">
+        <a href="https://vunelix.com/currency-converter" target="_blank" class="live-link">🔴 Live USD/PKR Check</a>
       </div>
     </div>
     <div class="rate-info-badge" style="margin-top:10px;">
       <span>Per Tola ($): <strong id="tolaUsdDisplay">$0</strong></span>
       <span>Calculated PKR: <strong id="tolaPkrDisplay">Rs. 0</strong></span>
     </div>
-    <button type="button" id="btnSyncRate" class="intl-sync-btn">⚡ Apply Calculated Rate to Calculator</button>
   </div>
 
-  <!-- Clear Separation Divider Line -->
+  <!-- Clear Separation Divider -->
   <br><div class="section-divider">OR ENTER LOCAL RATE MANUALLY</div><br><br>
 
   <div class="input-group">
@@ -330,6 +386,16 @@
   <div class="input-group">
     <label for="inputKarat">Karat Input Karein (e.g. 21, 22, 18):</label>
     <input type="number" id="inputKarat" inputmode="decimal" autocomplete="off" value="21" min="1" max="24" step="0.1">
+    
+    <!-- Quick Preset Buttons -->
+    <div class="preset-btns">
+      <button type="button" onclick="setKaratPreset(12)">12K</button>
+      <button type="button" onclick="setKaratPreset(18)">18K</button>
+      <button type="button" onclick="setKaratPreset(21)">21K</button>
+      <button type="button" onclick="setKaratPreset(22)">22K</button>
+      <button type="button" onclick="setKaratPreset(24)">24K</button>
+    </div>
+
     <div class="rate-info-badge">
       <span>Purity: <strong id="karatPurityDisplay">87.50%</strong></span>
       <span>Tola: <strong id="karatTolaDisplay">Rs. 0</strong></span>
@@ -348,10 +414,16 @@
 
     <div id="gramInputBox">
       <input type="number" id="itemWeightGram" inputmode="decimal" autocomplete="off" value="2.85" step="0.01">
+      
+      <!-- Live TMR Display Badge Card -->
+      <div class="rate-info-badge">
+        <span>Tola: <strong id="tmrTolaDisplay">0</strong></span>
+        <span>Masha: <strong id="tmrMashaDisplay">0</strong></span>
+        <span>Rati: <strong id="tmrRatiDisplay">0</strong></span>
+      </div>
     </div>
 
     <div id="tmrInputBox" style="display: none;">
-      <div class="converted-grams-badge">Total: <span id="convertedGrams">0.000</span> g</div>
       <div class="tmr-grid">
         <div>
           <label>Tola</label>
@@ -359,12 +431,15 @@
         </div>
         <div>
           <label>Masha</label>
-          <input type="number" id="inputMasha" inputmode="decimal" autocomplete="off" value="4">
+          <input type="number" id="inputMasha" inputmode="decimal" autocomplete="off" value="2">
         </div>
         <div>
           <label>Rati</label>
-          <input type="number" id="inputRati" inputmode="decimal" autocomplete="off" value="2.5">
+          <input type="number" id="inputRati" inputmode="decimal" autocomplete="off" value="7.5">
         </div>
+      </div>
+      <div class="rate-info-badge" style="justify-content: center;">
+        <span>Total Grams: <strong id="convertedGrams">2.850 g</strong></span>
       </div>
     </div>
   </div>
@@ -419,14 +494,19 @@
     <div class="result-value" id="finalPrice">Rs. 0</div>
     <div class="result-words" id="finalPriceWords"></div>
     <div class="breakdown" id="priceBreakdown"></div>
+    
+    <div class="action-btns">
+      <button type="button" class="copy-btn" id="btnCopyReceipt">📋 Copy Breakdown</button>
+      <button type="button" class="reset-btn" id="btnResetAll">🔄 Reset</button>
+    </div>
   </div>
 </div>
 
 <script>
-  // Dynamic Self-Updating Offline Cache Service Worker
+  // Service Worker Registration
   if ('serviceWorker' in navigator) {
     const swCode = `
-      const CACHE_NAME = 'gold-calc-v4';
+      const CACHE_NAME = 'gold-calc-v9';
       self.addEventListener('install', (e) => {
         self.skipWaiting();
         e.waitUntil(
@@ -509,6 +589,11 @@
     return Math.round(tolaInPkr);
   }
 
+  function setKaratPreset(val) {
+    document.getElementById('inputKarat').value = val;
+    calculateItemPrice();
+  }
+
   function setTransactionMode(mode) {
     transactionMode = mode;
     document.getElementById('btnBuyMode').className = mode === 'buy' ? 'active' : '';
@@ -548,16 +633,34 @@
     document.getElementById('gramInputBox').style.display = mode === 'gram' ? 'block' : 'none';
     document.getElementById('tmrInputBox').style.display = mode === 'tmr' ? 'block' : 'none';
 
+    // Ensure bidirectional sync on mode switch
     if (mode === 'tmr') {
       const currentGram = parseFloat(document.getElementById('itemWeightGram').value) || 0;
-      if (currentGram > 0 && parseFloat(document.getElementById('inputTola').value) === 0) {
-        syncGramsToTMR(currentGram);
-      }
+      syncGramsToTMRFields(currentGram);
+    } else {
+      syncTMRToGramField();
     }
     calculateItemPrice();
   }
 
-  function syncGramsToTMR(grams) {
+  function syncGramsToTMRFields(grams) {
+    const tmr = getTMRFromGrams(grams);
+    document.getElementById('inputTola').value = tmr.tola;
+    document.getElementById('inputMasha').value = tmr.masha;
+    document.getElementById('inputRati').value = tmr.rati;
+  }
+
+  function syncTMRToGramField() {
+    const tola = parseFloat(document.getElementById('inputTola').value) || 0;
+    const masha = parseFloat(document.getElementById('inputMasha').value) || 0;
+    const rati = parseFloat(document.getElementById('inputRati').value) || 0;
+    const totalTolas = tola + (masha / MASHA_PER_TOLA) + (rati / RATI_PER_TOLA);
+    const calculatedGrams = totalTolas * TOLA_GRAMS;
+    
+    document.getElementById('itemWeightGram').value = calculatedGrams ? calculatedGrams.toFixed(3) : '0';
+  }
+
+  function getTMRFromGrams(grams) {
     const totalTolas = grams / TOLA_GRAMS;
     const tola = Math.floor(totalTolas);
     const remTola = totalTolas - tola;
@@ -565,10 +668,7 @@
     const masha = Math.floor(totalMasha);
     const remMasha = totalMasha - masha;
     const rati = Math.round(remMasha * RATI_PER_MASHA * 10) / 10;
-
-    document.getElementById('inputTola').value = tola;
-    document.getElementById('inputMasha').value = masha;
-    document.getElementById('inputRati').value = rati;
+    return { tola, masha, rati };
   }
 
   function setMakingMode(mode) {
@@ -634,13 +734,28 @@
     let grossGrams = 0;
     if (weightMode === 'gram') {
       grossGrams = parseFloat(document.getElementById('itemWeightGram').value) || 0;
+      
+      // Real-time update into TMR inputs & badge card
+      syncGramsToTMRFields(grossGrams);
+      const tmrObj = getTMRFromGrams(grossGrams);
+      document.getElementById('tmrTolaDisplay').innerText = tmrObj.tola;
+      document.getElementById('tmrMashaDisplay').innerText = tmrObj.masha;
+      document.getElementById('tmrRatiDisplay').innerText = tmrObj.rati;
+
     } else {
       const tola = parseFloat(document.getElementById('inputTola').value) || 0;
       const masha = parseFloat(document.getElementById('inputMasha').value) || 0;
       const rati = parseFloat(document.getElementById('inputRati').value) || 0;
       const totalTolas = tola + (masha / MASHA_PER_TOLA) + (rati / RATI_PER_TOLA);
       grossGrams = totalTolas * TOLA_GRAMS;
-      document.getElementById('convertedGrams').innerText = grossGrams.toFixed(3);
+      
+      // Real-time update into Gram input field & badge display
+      document.getElementById('itemWeightGram').value = grossGrams ? grossGrams.toFixed(3) : '0';
+      document.getElementById('convertedGrams').innerText = grossGrams.toFixed(3) + ' g';
+      
+      document.getElementById('tmrTolaDisplay').innerText = tola;
+      document.getElementById('tmrMashaDisplay').innerText = masha;
+      document.getElementById('tmrRatiDisplay').innerText = rati;
     }
 
     let stoneDeduction = transactionMode === 'sell' ? (parseFloat(document.getElementById('stoneWeight').value) || 0) : 0;
@@ -710,17 +825,37 @@
     document.getElementById('finalPriceWords').innerText = formatAmountInWords(totalPrice);
   }
 
+  function copyReceiptToClipboard() {
+    const finalVal = document.getElementById('finalPrice').innerText;
+    const finalWords = document.getElementById('finalPriceWords').innerText;
+    const rawBreakdown = document.getElementById('priceBreakdown').innerText;
+    
+    const textToCopy = `🪙 *GOLD QUOTATION RECEIPT*\n------------------------------\n*Total Amount:* ${finalVal}\n(${finalWords})\n\n*Breakdown Details:*\n${rawBreakdown}`;
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      const copyBtn = document.getElementById('btnCopyReceipt');
+      copyBtn.innerText = '✅ Copied!';
+      setTimeout(() => { copyBtn.innerText = '📋 Copy Breakdown'; }, 2000);
+    });
+  }
+
+  function resetAllFields() {
+    document.getElementById('itemWeightGram').value = '2.85';
+    document.getElementById('stoneWeight').value = '';
+    document.getElementById('sellDiscountTola').value = '';
+    document.getElementById('wastageValue').value = '';
+    document.getElementById('makingValue').value = '';
+    document.getElementById('taxRate').value = '';
+    document.getElementById('inputTola').value = '0';
+    document.getElementById('inputMasha').value = '2';
+    document.getElementById('inputRati').value = '7.5';
+    document.getElementById('inputKarat').value = '21';
+    calculateItemPrice();
+  }
+
   window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('goldOunceUsd').addEventListener('input', calculateIntlGold);
     document.getElementById('usdPkrRate').addEventListener('input', calculateIntlGold);
-
-    document.getElementById('btnSyncRate').addEventListener('click', () => {
-      const pkrTola = calculateIntlGold();
-      if (pkrTola > 0) {
-        document.getElementById('rate24k').value = pkrTola;
-        calculateRates();
-      }
-    });
 
     document.getElementById('rate24k').addEventListener('input', calculateRates);
     document.getElementById('inputKarat').addEventListener('input', calculateItemPrice);
@@ -743,6 +878,8 @@
     document.getElementById('btnWastageFixed').addEventListener('click', () => setWastageMode('fixed'));
     document.getElementById('btnMakingFixed').addEventListener('click', () => setMakingMode('fixed'));
     document.getElementById('btnMakingPerGram').addEventListener('click', () => setMakingMode('perGram'));
+    document.getElementById('btnCopyReceipt').addEventListener('click', copyReceiptToClipboard);
+    document.getElementById('btnResetAll').addEventListener('click', resetAllFields);
 
     calculateIntlGold();
     calculateRates();
