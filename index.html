@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="google" content="notranslate">
 <meta name="robots" content="noindex, nofollow">
-<title>Advanced Gold Rate & Item Price Calculator</title>
+<title>Gold Calculator</title>
+
+<!-- PWA / Add-to-Home (mobile app + offline) -->
+<meta name="theme-color" content="#0b0f19">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gold Calc">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230b0f19'/%3E%3Ccircle cx='90' cy='90' r='58' fill='%23ffd700'/%3E%3Ctext x='90' y='118' font-size='72' font-weight='bold' text-anchor='middle' fill='%23000' font-family='Arial'%3E24K%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230b0f19'/%3E%3Ccircle cx='90' cy='90' r='58' fill='%23ffd700'/%3E%3Ctext x='90' y='118' font-size='72' font-weight='bold' text-anchor='middle' fill='%23000' font-family='Arial'%3E24K%3C/text%3E%3C/svg%3E">
 
 <style>
   * {
@@ -733,43 +742,10 @@ Gold price sirf Net Gold pe lagta hai</span>
 </div>
 
 <script>
-  // Service Worker Registration
+  // Service Worker Registration — alag sw.js file se (Android + iOS reliable offline)
   if ('serviceWorker' in navigator) {
-    const swCode = `
-      const CACHE_NAME = 'gold-calc-v12';
-      self.addEventListener('install', (e) => {
-        self.skipWaiting();
-        e.waitUntil(
-          caches.open(CACHE_NAME).then((cache) => {
-            return cache.add(new Request(self.registration.scope, { cache: 'reload' }));
-          })
-        );
-      });
-      self.addEventListener('activate', (e) => {
-        e.waitUntil(
-          caches.keys().then((keys) => {
-            return Promise.all(keys.map((k) => k !== CACHE_NAME ? caches.delete(k) : null));
-          }).then(() => self.clients.claim())
-        );
-      });
-      self.addEventListener('fetch', (e) => {
-        e.respondWith(
-          fetch(e.request).then((res) => {
-            if (res.status === 200) {
-              const resClone = res.clone();
-              caches.open(CACHE_NAME).then((c) => c.put(e.request, resClone));
-            }
-            return res;
-          }).catch(() => caches.match(e.request))
-        );
-      });
-    `;
-
-    const blob = new Blob([swCode], { type: 'application/javascript' });
-    const swUrl = URL.createObjectURL(blob);
-
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register(swUrl, { scope: './' }).then((reg) => {
+      navigator.serviceWorker.register('./sw.js', { scope: './' }).then((reg) => {
         reg.update();
       }).catch(() => {});
     });
