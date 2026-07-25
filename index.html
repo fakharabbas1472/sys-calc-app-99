@@ -946,7 +946,8 @@ Gold price sirf Net Gold pe lagta hai</span>
 
       // Reverse: is per-gram rate se 24K tola base kitna banta hai
       const implied24kTola = purity > 0 ? (manualPerGram / purity) * TOLA_GRAMS : 0;
-      perGramHint.innerHTML = `🔎 Iska matlab 24K tola base = <strong>Rs. ${Math.round(implied24kTola).toLocaleString('en-PK')}</strong> (${selectedKarat}K gram × 11.664 ÷ purity). Compare karo apne rate se.`;
+      const implied24kGram = purity > 0 ? manualPerGram / purity : 0;
+      perGramHint.innerHTML = `🔎 Iska matlab 24K tola base = <strong>Rs. ${Math.round(implied24kTola).toLocaleString('en-PK')}</strong><br><span style="color:#9da8b9;font-weight:400;">(${selectedKarat}K gram ${manualPerGram.toLocaleString('en-PK')} ÷ purity ${purity.toFixed(3)} = ${Math.round(implied24kGram).toLocaleString('en-PK')} per 24K gram × 11.664)</span> — compare karo apne rate se.`;
     } else {
       perGramHint.innerHTML = '💡 Agar shop wala per gram rate bataye to yahan daalo — phir sab isi hisab se chalega';
     }
