@@ -325,12 +325,182 @@
     background: #2d3748;
     margin: 20px 0;
   }
+
+  /* Collapsible Help / Explanation Note */
+  .help-box {
+    background: #182232;
+    border: 1px solid #2d3748;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+  .help-toggle {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #ffd700;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .help-toggle .arrow {
+    transition: transform 0.2s;
+    font-size: 12px;
+  }
+  .help-box.open .help-toggle .arrow {
+    transform: rotate(180deg);
+  }
+  .help-content {
+    display: none;
+    padding: 0 14px 16px 14px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #d0d7e2;
+  }
+  .help-box.open .help-content {
+    display: block;
+  }
+  .help-content h4 {
+    color: #ffd700;
+    margin: 14px 0 6px 0;
+    font-size: 13px;
+  }
+  .help-content .formula {
+    background: #0b0f19;
+    border: 1px solid #2d3748;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 6px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #00e676;
+    display: block;
+    white-space: pre-wrap;
+  }
+  .help-content .warn {
+    color: #ffb020;
+    font-weight: 600;
+  }
+  .help-content ul {
+    margin: 6px 0;
+    padding-left: 18px;
+  }
+
+  /* Save button */
+  .save-btn {
+    width: 100%;
+    background: #ffd700;
+    color: #000;
+    border: none;
+    padding: 11px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+
+  /* History Section */
+  .history-section {
+    margin-top: 22px;
+  }
+  .history-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .history-head h3 {
+    margin: 0;
+    text-align: left;
+  }
+  .clear-history-btn {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    padding: 7px 12px;
+    font-weight: 600;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .history-empty {
+    color: #6b7688;
+    font-size: 13px;
+    text-align: center;
+    padding: 16px;
+    background: #1a2332;
+    border: 1px dashed #2d3748;
+    border-radius: 8px;
+  }
+  .history-item {
+    background: #1a2332;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .history-item .hi-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .history-item .hi-name {
+    font-weight: 700;
+    color: #ffd700;
+    font-size: 14px;
+  }
+  .history-item .hi-price {
+    font-weight: 700;
+    color: #00e676;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .history-item .hi-meta {
+    font-size: 12px;
+    color: #9da8b9;
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .history-item .hi-del {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 8px;
+    font-weight: 600;
+  }
 </style>
 </head>
 <body class="notranslate">
 
 <div class="container notranslate">
   <h2>🪙 Gold Rate Calculator</h2>
+
+  <!-- Help Note 1: International (Ounce / 31.1) — upar wale box ke liye -->
+  <div class="help-box" id="helpBoxIntl">
+    <button type="button" class="help-toggle" id="helpToggleIntl">
+      <span>ℹ️ International Rate kaise banta hai? (Ounce / 31.1 wala)</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="help-content">
+      Neeche wala <strong>🌐 International box</strong> <strong>Dollar ($) aur Ounce</strong> ke hisab se chalta hai. Yahan <span class="warn">1 Ounce = 31.1035 gram</span> hota hai (international standard, tola nahi).
+      <span class="formula">1 Tola ka $ rate  =  ($/Ounce ÷ 31.1035) × 11.664
+Tola ka PKR       =  Tola $ rate × USD/PKR rate</span>
+      <strong>Misaal:</strong> $4000/oz, USD = 278.50
+      <span class="formula">(4000 ÷ 31.1035) × 11.664  = $1500   (1 tola $)
+1500 × 278.50              = 4,17,757 PKR (24K tola)</span>
+      <em>Ye box international bhaav se 24K tola ka PKR rate nikaal deta hai — sirf reference/guide ke liye.</em>
+    </div>
+  </div>
 
   <!-- International Ounce & Dollar Rate Section -->
   <div class="intl-box">
@@ -354,7 +524,49 @@
   </div>
 
   <!-- Clear Separation Divider -->
-  <br><div class="section-divider">OR ENTER LOCAL RATE MANUALLY</div><br><br>
+  <br><div class="section-divider">OR ENTER LOCAL RATE MANUALLY</div><br>
+
+  <!-- Help Note 2: Local (Tola / 11.664) — item calculation ke liye -->
+  <div class="help-box" id="helpBoxLocal">
+    <button type="button" class="help-toggle" id="helpToggleLocal">
+      <span>ℹ️ Local Rate & Item Price kaise banti hai? (Zaroor parho)</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="help-content">
+
+      <h4>🏷️ Local Rate — Tola / 11.664 wala</h4>
+      1 Tola = <strong>11.664 gram</strong> hota hai (Pakistan ka local standard). Actual item ki calculation <strong>isi</strong> se hoti hai — <span class="warn">upar wala Ounce/31.1 nahi</span>.
+      <span class="formula">24K per gram  =  24K tola rate ÷ 11.664
+Kisi karat ka gram  =  24K per gram × (karat ÷ 24)</span>
+      <strong>Misaal:</strong> 24K tola = 4,32,500
+      <span class="formula">4,32,500 ÷ 11.664        = 37,079   (24K gram)
+37,079 × (21 ÷ 24)      = 32,445   (21K gram)</span>
+
+      <h4>❓ Shop wala zyada kyun bolta hai?</h4>
+      <ul>
+        <li>Kuch shop tola ko <span class="warn">11.664 ki jagah 11.3 gram</span> maan lete hain → per gram rate upar aa jaata hai (customer se zyada paisa).</li>
+        <li>Ya wo base rate hi thoda upar rakhte hain, ya wastage/margin ko per-gram rate mein chhupa dete hain.</li>
+        <li><strong>Match karna ho</strong> to neeche <strong>"Per Gram Rate"</strong> field mein shop wala rate (jaise 33,500) daal do — sab usi hisab se chalega.</li>
+      </ul>
+
+      <h4>💎 Nag / Stone (Patthar) ka dhyaan</h4>
+      Ring/set mein jo <span class="warn">stone (nag) laga ho wo sona nahi</span> — uski gold value 0 hoti hai.
+      Total weight mein se stone ka weight <strong>minus</strong> karo, warna stone ke bhi sone ke paise lag jayenge.
+      <span class="formula">Net Gold = Total weight − Stone weight
+Gold price sirf Net Gold pe lagta hai</span>
+      <em>(Stone deduction field Sell Mode mein hai.)</em>
+
+      <h4>🧮 Final Price ka formula</h4>
+      <span class="formula">Gold value   = Net gram × per-gram rate
++ Wastage    = (% ya fixed)
++ Making     = (fixed ya per gram × weight)
++ Tax/GST    = (% subtotal ya sirf gold pe)
+─────────────────────────────
+= Total Price</span>
+      <em>Sell Mode mein wastage/kaat <strong>minus</strong> hoti hai, add nahi.</em>
+
+    </div>
+  </div>
 
   <div class="input-group">
     <label for="rate24k">24 Karat Rate Per Tola (PKR):</label>
@@ -404,6 +616,12 @@
   </div>
 
   <div class="input-group">
+    <label for="perGramRate">🏷️ Per Gram Rate (Optional) — <span id="perGramKaratLabel">21K</span> ka 1 gram price (PKR):</label>
+    <input type="number" id="perGramRate" inputmode="decimal" autocomplete="off" value="" placeholder="Khali chhoro to upar wala tola rate use hoga" step="1">
+    <span class="words-helper" id="perGramRateHint">💡 Agar shop wala per gram rate bataye to yahan daalo — phir sab isi hisab se chalega</span>
+  </div>
+
+  <div class="input-group">
     <div class="switch-header">
       <label>⚖️ Weight Input Mode</label>
       <div class="btn-group">
@@ -444,11 +662,13 @@
     </div>
   </div>
 
+  <div class="input-group">
+    <label for="stoneWeight">💎 Nag / Stone Weight Deduction (Grams):</label>
+    <input type="number" id="stoneWeight" inputmode="decimal" autocomplete="off" value="" step="0.01" placeholder="Stone ka weight — sone se minus hoga">
+    <span class="words-helper" id="stoneHint">💡 Ring/set mein stone laga ho to yahan uska weight daalo — us par gold rate nahi lagega</span>
+  </div>
+
   <div id="sellOptionsBox" style="display: none;">
-    <div class="input-group">
-      <label for="stoneWeight">Nag / Stone Weight Deduction (Grams):</label>
-      <input type="number" id="stoneWeight" inputmode="decimal" autocomplete="off" value="" step="0.01">
-    </div>
     <div class="input-group">
       <label for="sellDiscountTola">Shop Buying Rate Discount Per Tola (PKR):</label>
       <input type="number" id="sellDiscountTola" inputmode="decimal" autocomplete="off" value="" step="500">
@@ -499,6 +719,16 @@
       <button type="button" class="copy-btn" id="btnCopyReceipt">📋 Copy Breakdown</button>
       <button type="button" class="reset-btn" id="btnResetAll">🔄 Reset</button>
     </div>
+    <button type="button" class="save-btn" id="btnSaveHistory">💾 Save (Shop/Item ka naam ke saath)</button>
+  </div>
+
+  <!-- Saved History Section -->
+  <div class="history-section">
+    <div class="history-head">
+      <h3>📒 Saved History</h3>
+      <button type="button" class="clear-history-btn" id="btnClearHistory">🗑️ Clear All</button>
+    </div>
+    <div id="historyList"></div>
   </div>
 </div>
 
@@ -506,7 +736,7 @@
   // Service Worker Registration
   if ('serviceWorker' in navigator) {
     const swCode = `
-      const CACHE_NAME = 'gold-calc-v9';
+      const CACHE_NAME = 'gold-calc-v12';
       self.addEventListener('install', (e) => {
         self.skipWaiting();
         e.waitUntil(
@@ -724,8 +954,26 @@
     if (selectedKarat < 0) selectedKarat = 0;
 
     const purity = selectedKarat / 24;
-    const karatTolaPrice = effective24kRate * purity;
-    const karatGramPrice = rate24kGram * purity;
+    let karatGramPrice = rate24kGram * purity;
+    let karatTolaPrice = effective24kRate * purity;
+
+    // Show which karat the per-gram field applies to
+    document.getElementById('perGramKaratLabel').innerText = selectedKarat + 'K';
+
+    // Manual per-gram override: agar per gram rate diya hai to usi ko selected karat ka gram rate maan lo
+    const manualPerGram = parseFloat(document.getElementById('perGramRate').value) || 0;
+    const usingManualPerGram = manualPerGram > 0;
+    const perGramHint = document.getElementById('perGramRateHint');
+    if (usingManualPerGram) {
+      karatGramPrice = manualPerGram;
+      karatTolaPrice = manualPerGram * TOLA_GRAMS;
+
+      // Reverse: is per-gram rate se 24K tola base kitna banta hai
+      const implied24kTola = purity > 0 ? (manualPerGram / purity) * TOLA_GRAMS : 0;
+      perGramHint.innerHTML = `🔎 Iska matlab 24K tola base = <strong>Rs. ${Math.round(implied24kTola).toLocaleString('en-PK')}</strong> (${selectedKarat}K gram × 11.664 ÷ purity). Compare karo apne rate se.`;
+    } else {
+      perGramHint.innerHTML = '💡 Agar shop wala per gram rate bataye to yahan daalo — phir sab isi hisab se chalega';
+    }
 
     document.getElementById('karatPurityDisplay').innerText = (purity * 100).toFixed(2) + '%';
     document.getElementById('karatTolaDisplay').innerText = 'Rs. ' + Math.round(karatTolaPrice).toLocaleString('en-PK');
@@ -758,7 +1006,7 @@
       document.getElementById('tmrRatiDisplay').innerText = rati;
     }
 
-    let stoneDeduction = transactionMode === 'sell' ? (parseFloat(document.getElementById('stoneWeight').value) || 0) : 0;
+    let stoneDeduction = parseFloat(document.getElementById('stoneWeight').value) || 0;
     const netGrams = Math.max(0, grossGrams - stoneDeduction);
     const rawGoldPrice = netGrams * karatGramPrice;
 
@@ -798,9 +1046,14 @@
       const taxLabelMode = isTaxOnSubtotal ? 'Full Subtotal' : 'Raw Gold Only';
       const makingLabelMode = makingMode === 'fixed' ? 'Fixed Total' : `Rs. ${makingInputValue} / gram`;
 
+      const stoneLineBuy = stoneDeduction > 0
+        ? `• <strong>Gross Weight:</strong> ${grossGrams.toFixed(3)} grams<br>
+        • <strong>Nag / Stone Deduction:</strong> -${stoneDeduction.toFixed(3)} grams<br>`
+        : '';
+
       breakdownBox.innerHTML = `
-        • <strong>Selected Rate (${selectedKarat}K):</strong> Rs. ${Math.round(karatGramPrice).toLocaleString('en-PK')} / gram<br>
-        • <strong>Calculated Weight:</strong> ${netGrams.toFixed(3)} grams<br>
+        • <strong>Selected Rate (${selectedKarat}K):</strong> Rs. ${Math.round(karatGramPrice).toLocaleString('en-PK')} / gram${usingManualPerGram ? ' <em>(Manual per-gram rate)</em>' : ''}<br>
+        ${stoneLineBuy}• <strong>${stoneDeduction > 0 ? 'Net Gold Weight' : 'Calculated Weight'}:</strong> ${netGrams.toFixed(3)} grams<br>
         • <strong>Raw Gold Price:</strong> Rs. ${Math.round(rawGoldPrice).toLocaleString('en-PK')}<br>
         • <strong>Wastage Amount (+${wastageLabelMode}):</strong> Rs. ${Math.round(wastageAmount).toLocaleString('en-PK')}<br>
         • <strong>Making Charges (${makingLabelMode}):</strong> Rs. ${Math.round(totalMaking).toLocaleString('en-PK')}<br>
@@ -812,7 +1065,7 @@
       const discountTola = parseFloat(document.getElementById('sellDiscountTola').value) || 0;
 
       breakdownBox.innerHTML = `
-        • <strong>Buying Rate (${selectedKarat}K):</strong> Rs. ${Math.round(karatGramPrice).toLocaleString('en-PK')} / gram <em>(-Rs. ${discountTola}/tola)</em><br>
+        • <strong>Buying Rate (${selectedKarat}K):</strong> Rs. ${Math.round(karatGramPrice).toLocaleString('en-PK')} / gram ${usingManualPerGram ? '<em>(Manual per-gram rate)</em>' : `<em>(-Rs. ${discountTola}/tola)</em>`}<br>
         • <strong>Gross Weight:</strong> ${grossGrams.toFixed(3)} grams<br>
         • <strong>Nag / Stone Deduction:</strong> -${stoneDeduction.toFixed(3)} grams<br>
         • <strong>Net Gold Weight:</strong> ${netGrams.toFixed(3)} grams<br>
@@ -846,6 +1099,7 @@
     document.getElementById('wastageValue').value = '';
     document.getElementById('makingValue').value = '';
     document.getElementById('taxRate').value = '';
+    document.getElementById('perGramRate').value = '';
     document.getElementById('inputTola').value = '0';
     document.getElementById('inputMasha').value = '2';
     document.getElementById('inputRati').value = '7.5';
@@ -853,12 +1107,265 @@
     calculateItemPrice();
   }
 
+  /* ---------- Auto-save last-used RATES (yaad rakhna) ---------- */
+  const RATE_KEY = 'goldCalcRates';
+  const RATE_FIELDS = ['goldOunceUsd', 'usdPkrRate', 'rate24k'];
+
+  function saveRates() {
+    try {
+      const data = {};
+      RATE_FIELDS.forEach(id => { data[id] = document.getElementById(id).value; });
+      localStorage.setItem(RATE_KEY, JSON.stringify(data));
+    } catch (e) {}
+  }
+
+  function loadRates() {
+    try {
+      const raw = localStorage.getItem(RATE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      RATE_FIELDS.forEach(id => {
+        if (data[id] !== undefined && data[id] !== '') {
+          document.getElementById(id).value = data[id];
+        }
+      });
+    } catch (e) {}
+  }
+
+  /* ---------- Saved calculation HISTORY ---------- */
+  const HISTORY_KEY = 'goldCalcHistory';
+
+  function getHistory() {
+    try {
+      return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    } catch (e) { return []; }
+  }
+
+  function saveHistory(list) {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); } catch (e) {}
+  }
+
+  // Result ke asli calculated amounts nikaalta hai (wahi logic jo calculateItemPrice mein hai)
+  function getCalculatedAmounts() {
+    const num = id => parseFloat(document.getElementById(id).value) || 0;
+
+    const marketRate24k = num('rate24k');
+    let effective24kRate = marketRate24k;
+    if (transactionMode === 'sell') {
+      effective24kRate = Math.max(0, marketRate24k - num('sellDiscountTola'));
+    }
+    const rate24kGram = effective24kRate / TOLA_GRAMS;
+
+    let selectedKarat = num('inputKarat') || 24;
+    if (selectedKarat > 24) selectedKarat = 24;
+    if (selectedKarat < 0) selectedKarat = 0;
+    const purity = selectedKarat / 24;
+
+    let karatGramPrice = rate24kGram * purity;
+    const manualPerGram = num('perGramRate');
+    if (manualPerGram > 0) karatGramPrice = manualPerGram;
+
+    // Weight
+    let grossGrams;
+    if (weightMode === 'gram') {
+      grossGrams = num('itemWeightGram');
+    } else {
+      grossGrams = (num('inputTola') + num('inputMasha') / MASHA_PER_TOLA + num('inputRati') / RATI_PER_TOLA) * TOLA_GRAMS;
+    }
+    const stone = num('stoneWeight');
+    const netGrams = Math.max(0, grossGrams - stone);
+    const rawGoldPrice = netGrams * karatGramPrice;
+
+    // Wastage
+    const wVal = num('wastageValue');
+    const wastageAmount = wastageMode === 'percent' ? rawGoldPrice * (wVal / 100) : wVal;
+
+    let makingAmount = 0, taxAmount = 0;
+    if (transactionMode === 'buy') {
+      const mVal = num('makingValue');
+      makingAmount = makingMode === 'fixed' ? mVal : mVal * netGrams;
+      const taxPercent = num('taxRate');
+      if (document.getElementById('taxOnSubtotal').checked) {
+        taxAmount = (rawGoldPrice + wastageAmount + makingAmount) * (taxPercent / 100);
+      } else {
+        taxAmount = rawGoldPrice * (taxPercent / 100);
+      }
+    }
+
+    return {
+      rawGoldPrice: Math.round(rawGoldPrice),
+      wastageAmount: Math.round(wastageAmount),
+      makingAmount: Math.round(makingAmount),
+      taxAmount: Math.round(taxAmount),
+      netGrams: netGrams
+    };
+  }
+
+  function addToHistory() {
+    const name = (prompt('Is calculation ka naam? (jaise shop ka naam ya item)') || '').trim();
+    if (!name) return; // cancel ya khali
+
+    const val = id => document.getElementById(id).value;
+    const perGramManual = parseFloat(val('perGramRate')) || 0;
+
+    const item = {
+      id: 'h' + Date.now() + '_' + Math.round(performance.now() * 1000),
+      name,
+      mode: transactionMode === 'buy' ? 'Buy 🛒' : 'Sell 💰',
+      isBuy: transactionMode === 'buy',
+
+      // Rates
+      rate24k: val('rate24k'),
+      perGramRate: perGramManual,                                 // manual per-gram (0 = nahi)
+      perGramUsed: document.getElementById('karatGramDisplay').innerText, // jo actually laga
+      karat: parseFloat(val('inputKarat')) || 0,
+
+      // Weight
+      weight: parseFloat(val('itemWeightGram')) || 0,
+      stone: parseFloat(val('stoneWeight')) || 0,
+
+      // Charges
+      wastageVal: parseFloat(val('wastageValue')) || 0,
+      wastageMode: wastageMode,                                   // 'percent' | 'fixed'
+      makingVal: parseFloat(val('makingValue')) || 0,
+      makingMode: makingMode,                                     // 'fixed' | 'perGram'
+      taxRate: parseFloat(val('taxRate')) || 0,
+      taxOnSubtotal: document.getElementById('taxOnSubtotal').checked,
+      sellDiscount: parseFloat(val('sellDiscountTola')) || 0,
+
+      // Calculated amounts (result ke asli numbers)
+      amounts: getCalculatedAmounts(),
+
+      // Result
+      finalPrice: document.getElementById('finalPrice').innerText,
+      finalWords: document.getElementById('finalPriceWords').innerText,
+      breakdown: document.getElementById('priceBreakdown').innerText,
+
+      dateStr: new Date().toLocaleString('en-PK', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    };
+
+    const list = getHistory();
+    list.unshift(item); // naya sabse upar
+    saveHistory(list);
+    renderHistory();
+
+    const btn = document.getElementById('btnSaveHistory');
+    btn.innerText = '✅ Save ho gaya!';
+    setTimeout(() => { btn.innerText = '💾 Save (Shop/Item ka naam ke saath)'; }, 1800);
+  }
+
+  function deleteHistoryItem(id) {
+    saveHistory(getHistory().filter(it => it.id !== id));
+    renderHistory();
+  }
+
+  function clearAllHistory() {
+    if (!confirm('Saari saved history clear kar dein? Ye wapas nahi aayegi.')) return;
+    saveHistory([]);
+    renderHistory();
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  function renderHistory() {
+    const list = getHistory();
+    const box = document.getElementById('historyList');
+    if (!list.length) {
+      box.innerHTML = '<div class="history-empty">Abhi koi saved calculation nahi. Upar "💾 Save" dabao to yahan aayega.</div>';
+      return;
+    }
+    const fmt = n => Number(n || 0).toLocaleString('en-PK');
+
+    box.innerHTML = list.map(it => {
+      // Rows sirf tabhi jab value ho — saaf dikhe
+      const rows = [];
+      rows.push(['24K Tola Base', `Rs. ${fmt(it.rate24k)}`]);
+      if (it.perGramRate > 0) {
+        rows.push(['Manual Per-Gram Rate', `Rs. ${fmt(it.perGramRate)}/g ✍️`]);
+      }
+      rows.push([`Selected Rate (${it.karat}K)`, `${escapeHtml(it.perGramUsed)}/g`]);
+      rows.push(['Weight', `${it.weight} g`]);
+      if (it.stone > 0) {
+        rows.push(['Nag / Stone (minus)', `${it.stone} g`]);
+        rows.push(['Net Gold Weight', `${Math.max(0, it.weight - it.stone).toFixed(3)} g`]);
+      }
+      if (it.wastageVal > 0) {
+        rows.push(['Wastage / Kaat', it.wastageMode === 'percent' ? `${it.wastageVal}%` : `Rs. ${fmt(it.wastageVal)} fixed`]);
+      }
+      if (it.isBuy && it.makingVal > 0) {
+        rows.push(['Making / Mazdoori', it.makingMode === 'perGram' ? `Rs. ${fmt(it.makingVal)}/gram` : `Rs. ${fmt(it.makingVal)} fixed`]);
+      }
+      if (it.isBuy && it.taxRate > 0) {
+        rows.push(['Tax / GST', `${it.taxRate}% (${it.taxOnSubtotal ? 'full subtotal' : 'gold only'})`]);
+      }
+      if (!it.isBuy && it.sellDiscount > 0) {
+        rows.push(['Buying Rate Discount', `Rs. ${fmt(it.sellDiscount)}/tola`]);
+      }
+
+      const detailRows = rows.map(r =>
+        `<div style="display:flex;justify-content:space-between;gap:10px;padding:2px 0;">
+           <span style="color:#9da8b9;">${r[0]}:</span>
+           <span style="color:#e0e6ed;font-weight:600;text-align:right;">${r[1]}</span>
+         </div>`
+      ).join('');
+
+      // Result ke asli amounts (calculated) — purani entries mein na hon to skip
+      let amountRows = '';
+      const a = it.amounts;
+      if (a) {
+        const arr = [];
+        arr.push(['Raw Gold Price', `Rs. ${fmt(a.rawGoldPrice)}`]);
+        if (a.wastageAmount > 0) arr.push([it.isBuy ? 'Wastage (+)' : 'Kaat (−)', `Rs. ${fmt(a.wastageAmount)}`]);
+        if (it.isBuy && a.makingAmount > 0) arr.push(['Making (+)', `Rs. ${fmt(a.makingAmount)}`]);
+        if (it.isBuy && a.taxAmount > 0) arr.push(['Tax / GST (+)', `Rs. ${fmt(a.taxAmount)}`]);
+
+        amountRows = `
+          <div style="margin-top:8px;border-top:1px dashed #3a4560;padding-top:8px;font-size:12px;">
+            <div style="color:#ffd700;font-weight:700;margin-bottom:4px;">💰 Amount Breakdown</div>
+            ${arr.map(r => `
+              <div style="display:flex;justify-content:space-between;gap:10px;padding:2px 0;">
+                <span style="color:#9da8b9;">${r[0]}:</span>
+                <span style="color:#00e676;font-weight:700;text-align:right;">${r[1]}</span>
+              </div>`).join('')}
+            <div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0 0;margin-top:4px;border-top:1px solid #2d3748;">
+              <span style="color:#e0e6ed;font-weight:700;">TOTAL:</span>
+              <span style="color:#ffd700;font-weight:700;text-align:right;">${escapeHtml(it.finalPrice)}</span>
+            </div>
+          </div>`;
+      }
+
+      return `
+      <div class="history-item">
+        <div class="hi-top">
+          <span class="hi-name">${escapeHtml(it.name)} <span style="font-weight:400;color:#9da8b9;font-size:11px;">(${it.mode})</span></span>
+          <span class="hi-price">${escapeHtml(it.finalPrice)}</span>
+        </div>
+        ${it.finalWords ? `<div class="hi-meta" style="color:#00e676;font-weight:600;margin-top:4px;">${escapeHtml(it.finalWords)}</div>` : ''}
+        <div class="hi-details" style="margin-top:8px;border-top:1px solid #2d3748;padding-top:8px;font-size:12px;">
+          ${detailRows}
+        </div>
+        ${amountRows}
+        <div class="hi-meta" style="margin-top:6px;">🕒 ${escapeHtml(it.dateStr)}</div>
+        <button type="button" class="hi-del" data-id="${it.id}">🗑️ Delete</button>
+      </div>`;
+    }).join('');
+
+    box.querySelectorAll('.hi-del').forEach(b => {
+      b.addEventListener('click', () => deleteHistoryItem(b.getAttribute('data-id')));
+    });
+  }
+
   window.addEventListener('DOMContentLoaded', () => {
+    loadRates();
+
     document.getElementById('goldOunceUsd').addEventListener('input', calculateIntlGold);
     document.getElementById('usdPkrRate').addEventListener('input', calculateIntlGold);
 
     document.getElementById('rate24k').addEventListener('input', calculateRates);
     document.getElementById('inputKarat').addEventListener('input', calculateItemPrice);
+    document.getElementById('perGramRate').addEventListener('input', calculateItemPrice);
     document.getElementById('itemWeightGram').addEventListener('input', calculateItemPrice);
     document.getElementById('inputTola').addEventListener('input', calculateItemPrice);
     document.getElementById('inputMasha').addEventListener('input', calculateItemPrice);
@@ -881,8 +1388,25 @@
     document.getElementById('btnCopyReceipt').addEventListener('click', copyReceiptToClipboard);
     document.getElementById('btnResetAll').addEventListener('click', resetAllFields);
 
+    document.getElementById('helpToggleIntl').addEventListener('click', () => {
+      document.getElementById('helpBoxIntl').classList.toggle('open');
+    });
+    document.getElementById('helpToggleLocal').addEventListener('click', () => {
+      document.getElementById('helpBoxLocal').classList.toggle('open');
+    });
+
+    // Rates ko yaad rakhne ke liye save-on-type
+    RATE_FIELDS.forEach(id => {
+      document.getElementById(id).addEventListener('input', saveRates);
+    });
+
+    // History buttons
+    document.getElementById('btnSaveHistory').addEventListener('click', addToHistory);
+    document.getElementById('btnClearHistory').addEventListener('click', clearAllHistory);
+
     calculateIntlGold();
     calculateRates();
+    renderHistory();
   });
 </script>
 </body>
