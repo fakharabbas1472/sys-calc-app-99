@@ -1,5 +1,5 @@
 // Gold Calculator — Service Worker (offline support, Android + iOS)
-const CACHE_NAME = 'gold-calc-v13';
+const CACHE_NAME = 'gold-calc-v14';
 
 // Jo cheezein offline chahiye (app single HTML hai)
 const ASSETS = [
