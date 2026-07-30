@@ -459,6 +459,151 @@
     line-height: 1;
   }
 
+  /* Compare bar + checkboxes */
+  .compare-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #182232;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #9da8b9;
+  }
+  .compare-btn {
+    margin-left: auto;
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    font-weight: 700;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .compare-btn:disabled {
+    background: #2d3748;
+    color: #6b7688;
+    cursor: not-allowed;
+  }
+  .hi-check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #9da8b9;
+  }
+  .hi-check-row input {
+    width: 18px;
+    height: 18px;
+    accent-color: #6366f1;
+    cursor: pointer;
+  }
+  .compare-result {
+    background: #14181f;
+    border: 2px solid #6366f1;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .compare-result h4 {
+    color: #a5b4fc;
+    margin: 0 0 10px 0;
+    text-align: left;
+  }
+  .cmp-item {
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .cmp-item.best {
+    border-color: #00e676;
+    background: #0e2016;
+  }
+  .cmp-name {
+    font-weight: 700;
+    color: #e0e6ed;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .cmp-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .cmp-badge.best { background: #00e676; color: #000; }
+  .cmp-badge.diff { background: #3a2020; color: #ff8f8f; }
+  .cmp-meta { color: #9da8b9; font-size: 12px; margin-top: 5px; line-height: 1.5; }
+
+  /* Compare table (saaf, readable) */
+  .cmp-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    background: transparent;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .cmp-table th, .cmp-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #232c3d;
+  }
+  .cmp-table thead th {
+    background: #1a2332;
+    color: #a5b4fc;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: right;
+    vertical-align: bottom;
+    border-bottom: 2px solid #6366f1;
+  }
+  .cmp-table thead th:first-child { text-align: left; }
+  .cmp-table thead th.win { color: #00e676; }
+  .cmp-table thead th .cmp-crown {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    margin-top: 3px;
+  }
+  .cmp-table td.lbl {
+    color: #9da8b9;
+    text-align: left;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  .cmp-table td.num {
+    text-align: right;
+    color: #cfd6e2;
+    font-variant-numeric: tabular-nums;
+  }
+  .cmp-table td.num.win {
+    color: #00e676;
+    font-weight: 700;
+    background: rgba(0, 230, 118, 0.08);
+  }
+  .cmp-table tbody tr:last-child td { border-bottom: none; }
+  .cmp-col-best { background: rgba(0, 230, 118, 0.04); }
+  .compare-close {
+    background: #2d3748;
+    color: #fff;
+    border: none;
+    padding: 7px 12px;
+    font-weight: 600;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
   /* History item thumbnail */
   .hi-thumb {
     width: 100%;
@@ -863,6 +1008,13 @@ Gold price sirf Net Gold pe lagta hai</span>
       <h3>📒 Saved History</h3>
       <button type="button" class="clear-history-btn" id="btnClearHistory">🗑️ Clear All</button>
     </div>
+
+    <div class="compare-bar" id="compareBar" style="display:none;">
+      <span>⚖️ Compare karne ke liye 2+ items select karo:</span>
+      <button type="button" class="compare-btn" id="btnCompare" disabled>Compare (0)</button>
+    </div>
+
+    <div id="compareResult"></div>
     <div id="historyList"></div>
   </div>
 </div>
@@ -1633,6 +1785,7 @@ Gold price sirf Net Gold pe lagta hai</span>
 
       return `
       <div class="history-item">
+        <label class="hi-check-row"><input type="checkbox" class="hi-check" data-id="${it.id}"> Compare ke liye select</label>
         <div class="hi-top">
           <span class="hi-name">${escapeHtml(it.name)} <span style="font-weight:400;color:#9da8b9;font-size:11px;">(${it.mode})</span></span>
           <span class="hi-price">${escapeHtml(it.finalPrice)}</span>
@@ -1655,6 +1808,144 @@ Gold price sirf Net Gold pe lagta hai</span>
     box.querySelectorAll('.hi-thumb').forEach(img => {
       img.addEventListener('click', () => openLightbox(img.src));
     });
+    // Compare checkboxes
+    box.querySelectorAll('.hi-check').forEach(cb => {
+      cb.addEventListener('change', updateCompareBtn);
+    });
+
+    // Compare bar sirf tab dikhe jab 2+ entries hon
+    document.getElementById('compareBar').style.display = list.length >= 2 ? 'flex' : 'none';
+    document.getElementById('compareResult').innerHTML = '';
+    updateCompareBtn();
+  }
+
+  /* ---------- Compare selected history items ---------- */
+  function parseRs(str) {
+    return parseInt(String(str).replace(/[^0-9]/g, ''), 10) || 0;
+  }
+
+  function getCheckedIds() {
+    return Array.from(document.querySelectorAll('.hi-check:checked')).map(cb => cb.getAttribute('data-id'));
+  }
+
+  function updateCompareBtn() {
+    const n = getCheckedIds().length;
+    const btn = document.getElementById('btnCompare');
+    btn.innerText = `Compare (${n})`;
+    btn.disabled = n < 2;
+  }
+
+  function runCompare() {
+    const ids = getCheckedIds();
+    if (ids.length < 2) return;
+
+    const list = getHistory().filter(it => ids.includes(it.id));
+    const fmt = n => Number(Math.round(n) || 0).toLocaleString('en-PK');
+
+    // Har item ke saare amounts nikaalo (purani entries fallback ke saath)
+    const rows = list.map(it => {
+      const a = it.amounts || {};
+      const total = parseRs(it.finalPrice);
+      const net = Math.max(0, (it.weight || 0) - (it.stone || 0));
+      const pureGold = (a.pureGoldPrice !== undefined) ? a.pureGoldPrice : (a.rawGoldPrice || 0);
+      return {
+        name: it.name, mode: it.mode, isBuy: it.isBuy, total, net,
+        goldPerGram: net > 0 ? pureGold / net : 0,   // pure gold ka per-gram (fair muqabla)
+        pureGold: pureGold,
+        wastage: a.wastageAmount || 0,
+        making: a.makingAmount || 0,
+        tax: a.taxAmount || 0,
+        stone: a.stonePrice || 0,
+        deduct: a.deductAmount || 0
+      };
+    });
+
+    const allBuy = rows.every(r => r.isBuy);
+    const allSell = rows.every(r => !r.isBuy);
+    const hasAmounts = rows.some(r => r.pureGold > 0);
+
+    // Ek metric par best nikaalne wala helper. lower=true → kam best, warna zyada best
+    function bestOf(key, lower) {
+      let bi = 0;
+      rows.forEach((r, i) => {
+        if (lower ? (r[key] < rows[bi][key]) : (r[key] > rows[bi][key])) bi = i;
+      });
+      return bi;
+    }
+
+    // Buy mein har kharcha KAM behtar; Sell mein gold/total ZYADA behtar
+    // Ek row banao har metric ke liye: label, key, lower(best=kam?), sirf-buy?
+    const metrics = [];
+    metrics.push({ label: '💰 Total', key: 'total', lower: allBuy });
+    if (hasAmounts) {
+      metrics.push({ label: '🪙 Gold rate /gram', key: 'goldPerGram', lower: allBuy });
+      metrics.push({ label: '🟡 Pure Gold Price', key: 'pureGold', lower: allBuy });
+      if (rows.some(r => r.wastage > 0)) metrics.push({ label: '➕ Wastage', key: 'wastage', lower: true });
+      if (allBuy && rows.some(r => r.making > 0)) metrics.push({ label: '🔨 Making', key: 'making', lower: true });
+      if (allBuy && rows.some(r => r.tax > 0)) metrics.push({ label: '🧾 Tax', key: 'tax', lower: true });
+      if (rows.some(r => r.stone > 0)) metrics.push({ label: '💎 Stone Price', key: 'stone', lower: true });
+      if (allSell && rows.some(r => r.deduct > 0)) metrics.push({ label: '✂️ Refining+Margin', key: 'deduct', lower: true });
+    }
+
+    // Overall best = jo Total mein best hai
+    const overallBi = bestOf('total', allBuy);
+    const bestTotal = rows[overallBi].total;
+
+    // Har metric ki row banao (best cell green highlight)
+    const metricRows = metrics.map(m => {
+      const bi = bestOf(m.key, m.lower);
+      const cells = rows.map((r, i) => {
+        const isBest = i === bi;
+        const bestCol = i === overallBi ? ' cmp-col-best' : '';
+        return `<td class="num${isBest ? ' win' : bestCol}">Rs. ${fmt(r[m.key])}</td>`;
+      }).join('');
+      return `<tr><td class="lbl">${m.label}</td>${cells}</tr>`;
+    }).join('');
+
+    // Weight alag warning
+    const weights = rows.map(r => r.net);
+    const weightWarn = (Math.max(...weights) - Math.min(...weights)) > 0.05
+      ? '<div style="color:#ffb020;font-size:12px;margin:8px 0;line-height:1.5;">⚠️ Weight alag hai — <strong>"Gold rate /gram"</strong> line dekho, wo weight ka farak hata deti hai (fair muqabla).</div>'
+      : '';
+
+    const modeNote = allBuy ? '🛒 Buy — har kharcha jitna <strong>kam</strong> utna behtar.'
+      : allSell ? '💰 Sell — gold/total jitna <strong>zyada</strong> utna behtar.'
+      : '⚠️ Buy aur Sell mix hain — muqabla theek nahi. Ek jaisi mode ke items chuno.';
+
+    // Header: naam + best crown
+    const headCells = rows.map((r, i) =>
+      `<th class="${i === overallBi ? 'win' : ''}">${escapeHtml(r.name)}${i === overallBi ? '<span class="cmp-crown">🏆 BEST</span>' : ''}</th>`
+    ).join('');
+
+    // Summary
+    const summary = (allBuy || allSell)
+      ? `<div style="margin-top:12px;padding:12px;background:#0e2016;border:1px solid #00e676;border-radius:8px;font-size:13px;line-height:1.7;">
+           🏆 <strong style="color:#00e676;">${escapeHtml(rows[overallBi].name)}</strong> best hai — Total sabse ${allBuy ? 'kam' : 'zyada'} (<strong>Rs. ${fmt(bestTotal)}</strong>).
+           ${rows.map((r,i)=> i===overallBi ? '' : `<br>• <strong>${escapeHtml(r.name)}</strong>: ${allBuy ? '+' : '−'}Rs. ${fmt(Math.abs(r.total - bestTotal))} ${allBuy ? 'mehnga' : 'kam'}`).join('')}
+         </div>`
+      : '';
+
+    document.getElementById('compareResult').innerHTML = `
+      <div class="compare-result">
+        <h4>⚖️ Comparison — ${rows.length} shops/items</h4>
+        <div style="color:#9da8b9;font-size:12px;margin-bottom:10px;line-height:1.5;">${modeNote}</div>
+        ${weightWarn}
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+          <table class="cmp-table">
+            <thead><tr><th></th>${headCells}</tr></thead>
+            <tbody>${metricRows}</tbody>
+          </table>
+        </div>
+        <div style="color:#6b7688;font-size:11px;margin-top:8px;">🟢 Green = us cheez mein sabse behtar${allBuy ? ' (kam kharcha)' : ''}</div>
+        ${summary}
+        ${!hasAmounts ? '<div style="color:#ffb020;font-size:11px;margin-top:8px;">⚠️ Kuch purani entries mein detail nahi thi — sirf Total compare hua.</div>' : ''}
+        <button type="button" class="compare-close" id="btnCloseCompare">✕ Compare band karo</button>
+      </div>`;
+
+    document.getElementById('btnCloseCompare').addEventListener('click', () => {
+      document.getElementById('compareResult').innerHTML = '';
+    });
+    document.getElementById('compareResult').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   window.addEventListener('DOMContentLoaded', () => {
@@ -1709,6 +2000,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     // History buttons
     document.getElementById('btnSaveHistory').addEventListener('click', addToHistory);
     document.getElementById('btnClearHistory').addEventListener('click', clearAllHistory);
+    document.getElementById('btnCompare').addEventListener('click', runCompare);
 
     // Photo attach
     document.getElementById('btnAddPhoto').addEventListener('click', () => {
