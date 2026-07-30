@@ -414,6 +414,90 @@
     margin-top: 10px;
   }
 
+  /* Photo attach row */
+  .photo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .photo-btn {
+    flex: 1;
+    background: #1a2332;
+    color: #ffd700;
+    border: 1px dashed #ffd700;
+    padding: 10px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  #photoPreviewBox {
+    position: relative;
+    flex-shrink: 0;
+  }
+  #photoPreview {
+    width: 52px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #ffd700;
+    display: block;
+  }
+  .photo-remove {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 12px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  /* History item thumbnail */
+  .hi-thumb {
+    width: 100%;
+    max-height: 140px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-top: 8px;
+    cursor: pointer;
+    border: 1px solid #2d3748;
+  }
+
+  /* Lightbox */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.92);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .lightbox img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    color: #fff;
+    font-size: 30px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+  }
+
   /* History Section */
   .history-section {
     margin-top: 22px;
@@ -759,6 +843,17 @@ Gold price sirf Net Gold pe lagta hai</span>
       <button type="button" class="copy-btn" id="btnCopyReceipt">📋 Copy Breakdown</button>
       <button type="button" class="reset-btn" id="btnResetAll">🔄 Reset</button>
     </div>
+
+    <!-- Optional photo attach (camera ya gallery) -->
+    <input type="file" id="photoInput" accept="image/*" style="display:none;">
+    <div class="photo-row">
+      <button type="button" class="photo-btn" id="btnAddPhoto">📷 Photo Lagao (optional)</button>
+      <div id="photoPreviewBox" style="display:none;">
+        <img id="photoPreview" alt="preview">
+        <button type="button" class="photo-remove" id="btnRemovePhoto">✕</button>
+      </div>
+    </div>
+
     <button type="button" class="save-btn" id="btnSaveHistory">💾 Save (Shop/Item ka naam ke saath)</button>
   </div>
 
@@ -770,6 +865,12 @@ Gold price sirf Net Gold pe lagta hai</span>
     </div>
     <div id="historyList"></div>
   </div>
+</div>
+
+<!-- Image Lightbox (bari image dekhne ke liye) -->
+<div id="imgLightbox" class="lightbox" style="display:none;">
+  <span class="lightbox-close">✕</span>
+  <img id="lightboxImg" alt="full image">
 </div>
 
 <script>
@@ -1191,6 +1292,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     document.getElementById('inputMasha').value = '2';
     document.getElementById('inputRati').value = '7.5';
     document.getElementById('inputKarat').value = '21';
+    if (typeof clearPendingPhoto === 'function') clearPendingPhoto();
     calculateItemPrice();
   }
 
@@ -1229,7 +1331,54 @@ Gold price sirf Net Gold pe lagta hai</span>
   }
 
   function saveHistory(list) {
-    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); } catch (e) {}
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); // throw hone do taake quota error pakad sakein
+  }
+
+  /* ---------- Photo attach (compress + preview) ---------- */
+  let pendingImage = null;   // compressed data-URL jo save hoga
+
+  // Image ko chhota (compress) karta hai taake storage na bhare
+  function compressImage(file, maxDim, quality) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > height && width > maxDim) { height = height * maxDim / width; width = maxDim; }
+          else if (height > maxDim) { width = width * maxDim / height; height = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function showPhotoPreview(dataUrl) {
+    document.getElementById('photoPreview').src = dataUrl;
+    document.getElementById('photoPreviewBox').style.display = dataUrl ? 'block' : 'none';
+    document.getElementById('btnAddPhoto').innerText = dataUrl ? '📷 Photo laga di ✓' : '📷 Photo Lagao (optional)';
+  }
+
+  function clearPendingPhoto() {
+    pendingImage = null;
+    document.getElementById('photoInput').value = '';
+    showPhotoPreview(null);
+  }
+
+  function openLightbox(src) {
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('imgLightbox').style.display = 'flex';
+  }
+  function closeLightbox() {
+    document.getElementById('imgLightbox').style.display = 'none';
+    document.getElementById('lightboxImg').src = '';
   }
 
   // Result ke asli calculated amounts nikaalta hai (wahi logic jo calculateItemPrice mein hai)
@@ -1352,12 +1501,26 @@ Gold price sirf Net Gold pe lagta hai</span>
       finalWords: document.getElementById('finalPriceWords').innerText,
       breakdown: document.getElementById('priceBreakdown').innerText,
 
+      image: pendingImage || null,   // laga hui photo (agar ho)
+
       dateStr: new Date().toLocaleString('en-PK', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     };
 
     const list = getHistory();
     list.unshift(item); // naya sabse upar
-    saveHistory(list);
+    try {
+      saveHistory(list);
+    } catch (e) {
+      // Storage bhar gaya (aksar images ki wajah se)
+      alert('⚠️ Storage bhar gaya — image save nahi ho saki. Purani kuch entries (jinme photo hai) delete karke dobara try karo. Filhaal ye entry bina photo ke save ho rahi hai.');
+      item.image = null;
+      try { saveHistory(list); } catch (e2) {
+        alert('❌ Storage poora bhar gaya. Pehle kuch history clear karo.');
+        list.shift(); // ye entry hata do
+        return;
+      }
+    }
+    clearPendingPhoto();
     renderHistory();
 
     const btn = document.getElementById('btnSaveHistory');
@@ -1475,6 +1638,7 @@ Gold price sirf Net Gold pe lagta hai</span>
           ${detailRows}
         </div>
         ${amountRows}
+        ${it.image ? `<img class="hi-thumb" src="${it.image}" data-full="${it.id}" alt="photo">` : ''}
         <div class="hi-meta" style="margin-top:6px;">🕒 ${escapeHtml(it.dateStr)}</div>
         <button type="button" class="hi-del" data-id="${it.id}">🗑️ Delete</button>
       </div>`;
@@ -1482,6 +1646,10 @@ Gold price sirf Net Gold pe lagta hai</span>
 
     box.querySelectorAll('.hi-del').forEach(b => {
       b.addEventListener('click', () => deleteHistoryItem(b.getAttribute('data-id')));
+    });
+    // Thumbnail click → bari image
+    box.querySelectorAll('.hi-thumb').forEach(img => {
+      img.addEventListener('click', () => openLightbox(img.src));
     });
   }
 
@@ -1537,6 +1705,26 @@ Gold price sirf Net Gold pe lagta hai</span>
     // History buttons
     document.getElementById('btnSaveHistory').addEventListener('click', addToHistory);
     document.getElementById('btnClearHistory').addEventListener('click', clearAllHistory);
+
+    // Photo attach
+    document.getElementById('btnAddPhoto').addEventListener('click', () => {
+      document.getElementById('photoInput').click();
+    });
+    document.getElementById('photoInput').addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        pendingImage = await compressImage(file, 1000, 0.6);   // max 1000px, quality 0.6
+        showPhotoPreview(pendingImage);
+      } catch (err) {
+        alert('Photo load nahi ho saki, dobara try karo.');
+        clearPendingPhoto();
+      }
+    });
+    document.getElementById('btnRemovePhoto').addEventListener('click', clearPendingPhoto);
+
+    // Lightbox close
+    document.getElementById('imgLightbox').addEventListener('click', closeLightbox);
 
     calculateIntlGold();
     calculateRates();
