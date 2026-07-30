@@ -543,19 +543,42 @@
   .cmp-badge.diff { background: #3a2020; color: #ff8f8f; }
   .cmp-meta { color: #9da8b9; font-size: 12px; margin-top: 5px; line-height: 1.5; }
 
-  /* Compare table (saaf, readable) */
+  /* Compare table (saaf, readable, scrollable) */
+  .cmp-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+  }
   .cmp-table {
-    width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 13px;
     background: transparent;
     border-radius: 8px;
     overflow: hidden;
+    min-width: 100%;
   }
   .cmp-table th, .cmp-table td {
     padding: 10px 12px;
     border-bottom: 1px solid #232c3d;
+    white-space: nowrap;
+  }
+  /* Har shop column ki minimum width — squeeze na ho */
+  .cmp-table th:not(:first-child),
+  .cmp-table td.num {
+    min-width: 96px;
+  }
+  /* Pehla column (label) chipka rahe scroll par bhi */
+  .cmp-table th:first-child,
+  .cmp-table td.lbl {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #14181f;
+    min-width: 130px;
+  }
+  .cmp-table thead th:first-child {
+    z-index: 3;
   }
   .cmp-table thead th {
     background: #1a2332;
@@ -1851,6 +1874,7 @@ Gold price sirf Net Gold pe lagta hai</span>
       return {
         name: it.name, mode: it.mode, isBuy: it.isBuy, total, net,
         goldPerGram: net > 0 ? pureGold / net : 0,   // pure gold ka per-gram (fair muqabla)
+        effRate: net > 0 ? total / net : total,      // total per gram (net gold) — best isi par
         pureGold: pureGold,
         wastage: a.wastageAmount || 0,
         making: a.makingAmount || 0,
@@ -1863,6 +1887,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     const allBuy = rows.every(r => r.isBuy);
     const allSell = rows.every(r => !r.isBuy);
     const hasAmounts = rows.some(r => r.pureGold > 0);
+    const canUseEff = rows.every(r => r.net > 0);   // sab ka net weight ho to per-gram best use karo
 
     // Ek metric par best nikaalne wala helper. lower=true → kam best, warna zyada best
     function bestOf(key, lower) {
@@ -1877,6 +1902,8 @@ Gold price sirf Net Gold pe lagta hai</span>
     // Ek row banao har metric ke liye: label, key, lower(best=kam?), sirf-buy?
     const metrics = [];
     metrics.push({ label: '💰 Total', key: 'total', lower: allBuy });
+    // Total ÷ net gold — crown isi par (weight ka farak hata deta hai)
+    if (canUseEff && allBuy) metrics.push({ label: '⭐ Total /gram (net)', key: 'effRate', lower: true });
     if (hasAmounts) {
       metrics.push({ label: '🪙 Gold rate /gram', key: 'goldPerGram', lower: allBuy });
       metrics.push({ label: '🟡 Pure Gold Price', key: 'pureGold', lower: allBuy });
@@ -1887,8 +1914,10 @@ Gold price sirf Net Gold pe lagta hai</span>
       if (allSell && rows.some(r => r.deduct > 0)) metrics.push({ label: '✂️ Refining+Margin', key: 'deduct', lower: true });
     }
 
-    // Overall best = jo Total mein best hai
-    const overallBi = bestOf('total', allBuy);
+    // Overall BEST = per-gram effective rate par (total ÷ net gold).
+    // Isse weight/making ka farak khud hisaab mein aa jaata hai — jo zyada sona kam paise mein de wo jeete.
+    // (Agar net weight na ho to total par fallback.)
+    const overallBi = canUseEff ? bestOf('effRate', allBuy) : bestOf('total', allBuy);
     const bestTotal = rows[overallBi].total;
 
     // Har metric ki row banao (best cell green highlight)
@@ -1917,11 +1946,20 @@ Gold price sirf Net Gold pe lagta hai</span>
       `<th class="${i === overallBi ? 'win' : ''}">${escapeHtml(r.name)}${i === overallBi ? '<span class="cmp-crown">🏆 BEST</span>' : ''}</th>`
     ).join('');
 
-    // Summary
+    // Summary — best kis wajah se (buy: per-gram sabse sasta / sell: sabse zyada paisa)
+    const bestRow = rows[overallBi];
+    const reason = allBuy
+      ? (canUseEff
+          ? `per gram sabse sasta (Rs. ${fmt(bestRow.effRate)}/g) — yani us paise mein sabse zyada sona`
+          : `Total sabse kam`)
+      : `Total sabse zyada (sabse zyada paisa milega)`;
+
     const summary = (allBuy || allSell)
       ? `<div style="margin-top:12px;padding:12px;background:#0e2016;border:1px solid #00e676;border-radius:8px;font-size:13px;line-height:1.7;">
-           🏆 <strong style="color:#00e676;">${escapeHtml(rows[overallBi].name)}</strong> best hai — Total sabse ${allBuy ? 'kam' : 'zyada'} (<strong>Rs. ${fmt(bestTotal)}</strong>).
-           ${rows.map((r,i)=> i===overallBi ? '' : `<br>• <strong>${escapeHtml(r.name)}</strong>: ${allBuy ? '+' : '−'}Rs. ${fmt(Math.abs(r.total - bestTotal))} ${allBuy ? 'mehnga' : 'kam'}`).join('')}
+           🏆 <strong style="color:#00e676;">${escapeHtml(bestRow.name)}</strong> best hai — ${reason}.
+           ${allBuy && canUseEff
+             ? rows.map((r,i)=> i===overallBi ? '' : `<br>• <strong>${escapeHtml(r.name)}</strong>: Rs. ${fmt(r.effRate)}/g (Rs. ${fmt(r.effRate - bestRow.effRate)}/g zyada)`).join('')
+             : rows.map((r,i)=> i===overallBi ? '' : `<br>• <strong>${escapeHtml(r.name)}</strong>: ${allBuy ? '+' : '−'}Rs. ${fmt(Math.abs(r.total - bestTotal))} ${allBuy ? 'mehnga' : 'kam'}`).join('')}
          </div>`
       : '';
 
@@ -1930,7 +1968,8 @@ Gold price sirf Net Gold pe lagta hai</span>
         <h4>⚖️ Comparison — ${rows.length} shops/items</h4>
         <div style="color:#9da8b9;font-size:12px;margin-bottom:10px;line-height:1.5;">${modeNote}</div>
         ${weightWarn}
-        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        ${rows.length >= 3 ? '<div style="color:#6b7688;font-size:11px;margin-bottom:6px;">👉 Table ko side mein scroll karo saare shops dekhne ke liye</div>' : ''}
+        <div class="cmp-scroll">
           <table class="cmp-table">
             <thead><tr><th></th>${headCells}</tr></thead>
             <tbody>${metricRows}</tbody>
