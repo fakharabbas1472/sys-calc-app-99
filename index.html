@@ -1870,12 +1870,18 @@ Gold price sirf Net Gold pe lagta hai</span>
       const a = it.amounts || {};
       const total = parseRs(it.finalPrice);
       const net = Math.max(0, (it.weight || 0) - (it.stone || 0));
+      const karat = it.karat || 0;
+      // Khaalis (24K) sone ke grams = net × karat/24
+      const pureGrams = (karat > 0) ? net * (karat / 24) : 0;
       const pureGold = (a.pureGoldPrice !== undefined) ? a.pureGoldPrice : (a.rawGoldPrice || 0);
       return {
-        name: it.name, mode: it.mode, isBuy: it.isBuy, total, net,
-        goldPerGram: net > 0 ? pureGold / net : 0,   // pure gold ka per-gram (fair muqabla)
-        effRate: net > 0 ? total / net : total,      // total per gram (net gold) — best isi par
+        name: it.name, mode: it.mode, isBuy: it.isBuy, total, net, karat, pureGrams,
+        goldPerGram: net > 0 ? pureGold / net : 0,   // us karat ka gold per-gram
+        // BEST isi par: total ÷ khaalis sone ke gram = 1 gram asli sona kitne ka pada
+        // (karat + weight + rate — sab ka farak khud khatam)
+        effRate: pureGrams > 0 ? total / pureGrams : (net > 0 ? total / net : total),
         pureGold: pureGold,
+        extra: Math.max(0, total - pureGold),           // Total − Pure Gold (wastage+making+tax+stone)
         wastage: a.wastageAmount || 0,
         making: a.makingAmount || 0,
         tax: a.taxAmount || 0,
@@ -1887,7 +1893,8 @@ Gold price sirf Net Gold pe lagta hai</span>
     const allBuy = rows.every(r => r.isBuy);
     const allSell = rows.every(r => !r.isBuy);
     const hasAmounts = rows.some(r => r.pureGold > 0);
-    const canUseEff = rows.every(r => r.net > 0);   // sab ka net weight ho to per-gram best use karo
+    const canUseEff = rows.every(r => r.pureGrams > 0);   // sab ka karat+weight ho to pure-gold per-gram best
+    const karatsSame = rows.every(r => r.karat === rows[0].karat);
 
     // Ek metric par best nikaalne wala helper. lower=true → kam best, warna zyada best
     function bestOf(key, lower) {
@@ -1902,11 +1909,14 @@ Gold price sirf Net Gold pe lagta hai</span>
     // Ek row banao har metric ke liye: label, key, lower(best=kam?), sirf-buy?
     const metrics = [];
     metrics.push({ label: '💰 Total', key: 'total', lower: allBuy });
-    // Total ÷ net gold — crown isi par (weight ka farak hata deta hai)
-    if (canUseEff && allBuy) metrics.push({ label: '⭐ Total /gram (net)', key: 'effRate', lower: true });
+    // Total ÷ khaalis (24K) sona — crown isi par (karat + weight ka farak hata deta hai)
+    if (canUseEff && allBuy) metrics.push({ label: '⭐ Khaalis sona (24K) /gram', key: 'effRate', lower: true });
+    // Har item ka karat dikhao taake pata rahe kaunsa kitna khara
+    metrics.push({ label: '📊 Karat', key: 'karat', lower: false, isKarat: true });
     if (hasAmounts) {
       metrics.push({ label: '🪙 Gold rate /gram', key: 'goldPerGram', lower: allBuy });
       metrics.push({ label: '🟡 Pure Gold Price', key: 'pureGold', lower: allBuy });
+      if (allBuy) metrics.push({ label: '➖ Extra (Total − Gold)', key: 'extra', lower: true });
       if (rows.some(r => r.wastage > 0)) metrics.push({ label: '➕ Wastage', key: 'wastage', lower: true });
       if (allBuy && rows.some(r => r.making > 0)) metrics.push({ label: '🔨 Making', key: 'making', lower: true });
       if (allBuy && rows.some(r => r.tax > 0)) metrics.push({ label: '🧾 Tax', key: 'tax', lower: true });
@@ -1922,8 +1932,13 @@ Gold price sirf Net Gold pe lagta hai</span>
 
     // Har metric ki row banao (best cell green highlight)
     const metricRows = metrics.map(m => {
-      const bi = bestOf(m.key, m.lower);
+      // Karat row: koi best highlight nahi (karat behtar/bura nahi hota)
+      const bi = m.isKarat ? -1 : bestOf(m.key, m.lower);
       const cells = rows.map((r, i) => {
+        if (m.isKarat) {
+          const bestCol = i === overallBi ? ' cmp-col-best' : '';
+          return `<td class="num${bestCol}" style="color:#c9b458;">${r.karat ? r.karat + 'K' : '—'}</td>`;
+        }
         const isBest = i === bi;
         const bestCol = i === overallBi ? ' cmp-col-best' : '';
         return `<td class="num${isBest ? ' win' : bestCol}">Rs. ${fmt(r[m.key])}</td>`;
@@ -1931,13 +1946,15 @@ Gold price sirf Net Gold pe lagta hai</span>
       return `<tr><td class="lbl">${m.label}</td>${cells}</tr>`;
     }).join('');
 
-    // Weight alag warning
+    // Karat/weight alag ho to bata do ke best khaalis sone par nikala gaya
     const weights = rows.map(r => r.net);
-    const weightWarn = (Math.max(...weights) - Math.min(...weights)) > 0.05
-      ? '<div style="color:#ffb020;font-size:12px;margin:8px 0;line-height:1.5;">⚠️ Weight alag hai — <strong>"Gold rate /gram"</strong> line dekho, wo weight ka farak hata deti hai (fair muqabla).</div>'
+    const weightDiff = (Math.max(...weights) - Math.min(...weights)) > 0.05;
+    const fairNote = (canUseEff && (!karatsSame || weightDiff))
+      ? `<div style="color:#ffb020;font-size:12px;margin:8px 0;line-height:1.5;">⚠️ ${!karatsSame ? 'Karat' : 'Weight'} alag hai — isliye best <strong>"Khaalis sona (24K) /gram"</strong> par nikala hai (total ÷ asli sone ke gram). Isse karat, weight aur rate sab ka farak khud khatam ho jaata hai.</div>`
       : '';
+    const weightWarn = fairNote;
 
-    const modeNote = allBuy ? '🛒 Buy — har kharcha jitna <strong>kam</strong> utna behtar.'
+    const modeNote = allBuy ? '🛒 Buy — <strong>Khaalis sona (24K) /gram</strong> jitna kam, wo best (us paise mein sabse zyada asli sona).'
       : allSell ? '💰 Sell — gold/total jitna <strong>zyada</strong> utna behtar.'
       : '⚠️ Buy aur Sell mix hain — muqabla theek nahi. Ek jaisi mode ke items chuno.';
 
@@ -1950,7 +1967,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     const bestRow = rows[overallBi];
     const reason = allBuy
       ? (canUseEff
-          ? `per gram sabse sasta (Rs. ${fmt(bestRow.effRate)}/g) — yani us paise mein sabse zyada sona`
+          ? `khaalis sona (24K) sabse sasta (Rs. ${fmt(bestRow.effRate)}/gram) — yani us paise mein sabse zyada asli sona`
           : `Total sabse kam`)
       : `Total sabse zyada (sabse zyada paisa milega)`;
 
@@ -1960,6 +1977,7 @@ Gold price sirf Net Gold pe lagta hai</span>
            ${allBuy && canUseEff
              ? rows.map((r,i)=> i===overallBi ? '' : `<br>• <strong>${escapeHtml(r.name)}</strong>: Rs. ${fmt(r.effRate)}/g (Rs. ${fmt(r.effRate - bestRow.effRate)}/g zyada)`).join('')
              : rows.map((r,i)=> i===overallBi ? '' : `<br>• <strong>${escapeHtml(r.name)}</strong>: ${allBuy ? '+' : '−'}Rs. ${fmt(Math.abs(r.total - bestTotal))} ${allBuy ? 'mehnga' : 'kam'}`).join('')}
+           ${allBuy && canUseEff && !weightDiff && karatsSame ? '' : `<div style="color:#9da8b9;font-size:11px;margin-top:8px;border-top:1px solid #1f3a28;padding-top:6px;">ℹ️ "Extra (Total − Gold)" row alag cheez batati hai — sirf making/wastage/tax. Wo halke item ko kam dikhata hai, isliye BEST uspe nahi, <strong>Khaalis 24K/gram</strong> par hai (weight-fair).</div>`}
          </div>`
       : '';
 
