@@ -1971,13 +1971,21 @@ Gold price sirf Net Gold pe lagta hai</span>
           : `Total sabse kam`)
       : `Total sabse zyada (sabse zyada paisa milega)`;
 
+    // Har doosre shop se best ke muqable kitna zyada (TOTAL rupees mein, utne hi sone par)
+    const extraLines = (allBuy && canUseEff)
+      ? rows.map((r, i) => {
+          if (i === overallBi) return '';
+          const extraTotal = (r.effRate - bestRow.effRate) * r.pureGrams;   // is shop par jitna zyada de rahe
+          return `<br>• <strong>${escapeHtml(r.name)}</strong>: is se lene par <strong style="color:#ff8f8f;">~Rs. ${fmt(extraTotal)} zyada</strong> de rahe ho (Total Rs. ${fmt(r.total)})`;
+        }).join('')
+      : rows.map((r, i) => i === overallBi ? '' : `<br>• <strong>${escapeHtml(r.name)}</strong>: ${allBuy ? '+' : '−'}Rs. ${fmt(Math.abs(r.total - bestTotal))} ${allBuy ? 'mehnga' : 'kam'} (Total Rs. ${fmt(r.total)})`).join('');
+
     const summary = (allBuy || allSell)
       ? `<div style="margin-top:12px;padding:12px;background:#0e2016;border:1px solid #00e676;border-radius:8px;font-size:13px;line-height:1.7;">
-           🏆 <strong style="color:#00e676;">${escapeHtml(bestRow.name)}</strong> best hai — ${reason}.
-           ${allBuy && canUseEff
-             ? rows.map((r,i)=> i===overallBi ? '' : `<br>• <strong>${escapeHtml(r.name)}</strong>: Rs. ${fmt(r.effRate)}/g (Rs. ${fmt(r.effRate - bestRow.effRate)}/g zyada)`).join('')
-             : rows.map((r,i)=> i===overallBi ? '' : `<br>• <strong>${escapeHtml(r.name)}</strong>: ${allBuy ? '+' : '−'}Rs. ${fmt(Math.abs(r.total - bestTotal))} ${allBuy ? 'mehnga' : 'kam'}`).join('')}
-           ${allBuy && canUseEff && !weightDiff && karatsSame ? '' : `<div style="color:#9da8b9;font-size:11px;margin-top:8px;border-top:1px solid #1f3a28;padding-top:6px;">ℹ️ "Extra (Total − Gold)" row alag cheez batati hai — sirf making/wastage/tax. Wo halke item ko kam dikhata hai, isliye BEST uspe nahi, <strong>Khaalis 24K/gram</strong> par hai (weight-fair).</div>`}
+           🏆 <strong style="color:#00e676;">${escapeHtml(bestRow.name)}</strong> best hai — ${reason}.<br>
+           <span style="color:#9da8b9;font-size:12px;">(${escapeHtml(bestRow.name)} ka Total: Rs. ${fmt(bestRow.total)})</span>
+           ${extraLines}
+           ${allBuy && canUseEff ? `<div style="color:#9da8b9;font-size:11px;margin-top:8px;border-top:1px solid #1f3a28;padding-top:6px;">ℹ️ "Zyada" ka matlab: utna hi khaalis sona lene par best rate ke muqable kitne extra rupees. (Weight/karat fair.)</div>` : ''}
          </div>`
       : '';
 
