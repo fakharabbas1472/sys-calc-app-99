@@ -869,6 +869,16 @@ Gold price sirf Net Gold pe lagta hai</span>
       <button type="button" onclick="setKaratPreset(24)">24K</button>
     </div>
 
+    <!-- Rate kis par lagana hai: item ke karat par YA poora 24K par -->
+    <div class="switch-header" style="margin-top:10px;">
+      <label style="margin-bottom:0;">💠 Gold Rate kis par?</label>
+      <div class="btn-group">
+        <button id="btnRateKarat" class="active" type="button">Item Karat par</button>
+        <button id="btnRate24k" type="button">24K par</button>
+      </div>
+    </div>
+    <span class="words-helper" id="rateBasisHint" style="display:none;">⚠️ 24K rate lag raha hai — item {k}K ka hai lekin poora khaalis sone ka bhaav. Yani ~{pct}% zyada gold par.</span>
+
     <div class="rate-info-badge">
       <span>Purity: <strong id="karatPurityDisplay">87.50%</strong></span>
       <span>Tola: <strong id="karatTolaDisplay">Rs. 0</strong></span>
@@ -1069,6 +1079,7 @@ Gold price sirf Net Gold pe lagta hai</span>
   let wastageMode = 'percent';
   let makingMode = 'fixed';
   let taxMode = 'subtotal';   // 'subtotal' | 'making' | 'gold'
+  let rateBasis = 'karat';    // 'karat' = item ke karat par | '24k' = poora 24K rate par
 
   function formatAmountInWords(num) {
     num = Math.round(num);
@@ -1215,6 +1226,13 @@ Gold price sirf Net Gold pe lagta hai</span>
     calculateItemPrice();
   }
 
+  function setRateBasis(basis) {
+    rateBasis = basis;
+    document.getElementById('btnRateKarat').className = basis === 'karat' ? 'active' : '';
+    document.getElementById('btnRate24k').className = basis === '24k' ? 'active' : '';
+    calculateItemPrice();
+  }
+
   function calculateRates() {
     const rate24k = parseFloat(document.getElementById('rate24k').value) || 0;
     const rateWords = formatAmountInWords(rate24k);
@@ -1261,8 +1279,20 @@ Gold price sirf Net Gold pe lagta hai</span>
     if (selectedKarat < 0) selectedKarat = 0;
 
     const purity = selectedKarat / 24;
-    let karatGramPrice = rate24kGram * purity;
-    let karatTolaPrice = effective24kRate * purity;
+    // Rate basis: 'karat' → us karat ka rate; '24k' → poora 24K rate (chahe item kam karat ka ho)
+    const rateMult = (rateBasis === '24k') ? 1 : purity;
+    let karatGramPrice = rate24kGram * rateMult;
+    let karatTolaPrice = effective24kRate * rateMult;
+
+    // 24K-basis hint (kitna zyada gold par charge ho raha)
+    const rateHint = document.getElementById('rateBasisHint');
+    if (rateBasis === '24k' && selectedKarat < 24) {
+      const extraPct = ((24 / selectedKarat - 1) * 100).toFixed(1);
+      rateHint.style.display = 'block';
+      rateHint.innerText = `⚠️ 24K rate lag raha hai — item ${selectedKarat}K ka hai lekin poora khaalis sone ka bhaav. Yani ~${extraPct}% zyada gold par (${Math.round(rate24kGram).toLocaleString('en-PK')}/g vs sahi ${Math.round(rate24kGram * purity).toLocaleString('en-PK')}/g).`;
+    } else {
+      rateHint.style.display = 'none';
+    }
 
     // Show which karat the per-gram field applies to
     document.getElementById('perGramKaratLabel').innerText = selectedKarat + 'K';
@@ -1324,24 +1354,32 @@ Gold price sirf Net Gold pe lagta hai</span>
     let wastageLabelMode = '';
     let chargeableGrams = netGrams;
 
-    // PURE gold price — sirf asli sona (net grams × rate), wastage ke baghair
-    const pureGoldPrice = netGrams * karatGramPrice;
+    // 24K-rate premium: pure gold ASLI karat rate par dikhe, extra alag
+    const is24kPremium = (rateBasis === '24k' && !usingManualPerGram && selectedKarat < 24);
+    const realGramRate = is24kPremium ? (rate24kGram * purity) : karatGramPrice;  // asli 21K rate
+
+    // PURE gold price — asli 21K value (net grams × asli rate)
+    const pureGoldPrice = netGrams * realGramRate;
+    // 24K rate ki wajah se net gold par jitna extra
+    const rate24kExtra = netGrams * (karatGramPrice - realGramRate);
+    // Charged net gold = pure + extra = netGrams × karatGramPrice (isi par wastage%/making/tax)
+    const chargedNetGold = pureGoldPrice + rate24kExtra;
 
     if (wastageMode === 'percent') {
-      wastageAmount = pureGoldPrice * (wastageInputValue / 100);
+      wastageAmount = chargedNetGold * (wastageInputValue / 100);
       wastageLabelMode = `${wastageInputValue}%`;
     } else if (wastageMode === 'weight') {
       wastageGrams = wastageInputValue;
       chargeableGrams = netGrams + wastageGrams;
-      wastageAmount = wastageGrams * karatGramPrice;   // gram × gold rate
+      wastageAmount = wastageGrams * karatGramPrice;   // gram × charged rate
       wastageLabelMode = `${wastageGrams} g weight`;
     } else {
       wastageAmount = wastageInputValue;
       wastageLabelMode = `Rs. ${wastageInputValue.toLocaleString('en-PK')} Fixed`;
     }
 
-    // Gold + wastage (ye woh number hai jispe making% aur tax lagta hai)
-    const goldPlusWastage = pureGoldPrice + wastageAmount;
+    // Gold + wastage (ye woh number hai jispe making% aur tax lagta hai) — charged basis
+    const goldPlusWastage = chargedNetGold + wastageAmount;
 
     let totalMaking = 0;
     let taxAmount = 0;
@@ -1383,11 +1421,16 @@ Gold price sirf Net Gold pe lagta hai</span>
         ? `• <strong>Nag / Stone Price (+):</strong> Rs. ${Math.round(stonePrice).toLocaleString('en-PK')} <em>(no tax)</em><br>`
         : '';
 
+      // 24K rate ki wajah se extra — alag line (pure gold mein shamil nahi)
+      const extra24kLine = (is24kPremium && rate24kExtra > 0)
+        ? `• <strong style="color:#ffb020;">24K Rate Extra (+):</strong> Rs. ${Math.round(rate24kExtra).toLocaleString('en-PK')} <em>(21K item par 24K rate ki wajah se)</em><br>`
+        : '';
+
       breakdownBox.innerHTML = `
-        • <strong>Selected Rate (${selectedKarat}K):</strong> Rs. ${Math.round(karatGramPrice).toLocaleString('en-PK')} / gram${usingManualPerGram ? ' <em>(Manual)</em>' : ''}<br>
+        • <strong>Selected Rate (${selectedKarat}K):</strong> Rs. ${Math.round(karatGramPrice).toLocaleString('en-PK')} / gram${usingManualPerGram ? ' <em>(Manual)</em>' : (rateBasis === '24k' && selectedKarat < 24 ? ' <em style="color:#ffb020;">(24K rate!)</em>' : '')}<br>
         ${stoneLineBuy}• <strong>Net Gold Weight:</strong> ${netGrams.toFixed(3)} g<br>
-        ${wastageWtLine}• <strong>Pure Gold Price:</strong> Rs. ${Math.round(pureGoldPrice).toLocaleString('en-PK')} <em>(${netGrams.toFixed(3)}g × rate)</em><br>
-        • <strong>Wastage (+${wastageLabelMode}):</strong> Rs. ${Math.round(wastageAmount).toLocaleString('en-PK')}<br>
+        ${wastageWtLine}• <strong>Pure Gold Price (${selectedKarat}K):</strong> Rs. ${Math.round(pureGoldPrice).toLocaleString('en-PK')} <em>(${netGrams.toFixed(3)}g × ${Math.round(realGramRate).toLocaleString('en-PK')})</em><br>
+        ${extra24kLine}• <strong>Wastage (+${wastageLabelMode}):</strong> Rs. ${Math.round(wastageAmount).toLocaleString('en-PK')}<br>
         • <strong>Making Charges (${makingLabelMode}):</strong> Rs. ${Math.round(totalMaking).toLocaleString('en-PK')}<br>
         • <strong>Tax (${taxPercent}% on ${taxLabelMode}):</strong> Rs. ${Math.round(taxAmount).toLocaleString('en-PK')}<br>
         ${stonePriceLine}<strong style="color:#ffd700;">= TOTAL: Rs. ${Math.round(totalPrice).toLocaleString('en-PK')}</strong>
@@ -1460,6 +1503,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     document.getElementById('inputMasha').value = '2';
     document.getElementById('inputRati').value = '7.5';
     document.getElementById('inputKarat').value = '21';
+    if (typeof setRateBasis === 'function') setRateBasis('karat');
     if (typeof clearPendingPhoto === 'function') clearPendingPhoto();
     calculateItemPrice();
   }
@@ -1565,9 +1609,10 @@ Gold price sirf Net Gold pe lagta hai</span>
     if (selectedKarat < 0) selectedKarat = 0;
     const purity = selectedKarat / 24;
 
-    let karatGramPrice = rate24kGram * purity;
     const manualPerGram = num('perGramRate');
-    if (manualPerGram > 0) karatGramPrice = manualPerGram;
+    const usingManual = manualPerGram > 0;
+    let karatGramPrice = rate24kGram * (rateBasis === '24k' ? 1 : purity);
+    if (usingManual) karatGramPrice = manualPerGram;
 
     // Weight
     let grossGrams;
@@ -1580,14 +1625,18 @@ Gold price sirf Net Gold pe lagta hai</span>
     const stonePrice = num('stonePrice');
     const netGrams = Math.max(0, grossGrams - stone);
 
-    // Pure gold (net grams × rate) — wastage ke baghair
-    const pureGoldPrice = netGrams * karatGramPrice;
+    // 24K premium split: pure gold ASLI karat rate par, extra alag
+    const is24kPremium = (rateBasis === '24k' && !usingManual && selectedKarat < 24);
+    const realGramRate = is24kPremium ? (rate24kGram * purity) : karatGramPrice;
+    const pureGoldPrice = netGrams * realGramRate;           // asli gold value
+    const rate24kExtra = netGrams * (karatGramPrice - realGramRate);
+    const chargedNetGold = pureGoldPrice + rate24kExtra;     // net × charged rate
 
     // Wastage
     const wVal = num('wastageValue');
     let wastageGrams = 0, chargeableGrams = netGrams, wastageAmount = 0;
     if (wastageMode === 'percent') {
-      wastageAmount = pureGoldPrice * (wVal / 100);
+      wastageAmount = chargedNetGold * (wVal / 100);
     } else if (wastageMode === 'weight') {
       wastageGrams = wVal;
       chargeableGrams = netGrams + wastageGrams;
@@ -1595,7 +1644,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     } else {
       wastageAmount = wVal;
     }
-    const goldPlusWastage = pureGoldPrice + wastageAmount;
+    const goldPlusWastage = chargedNetGold + wastageAmount;
 
     let makingAmount = 0, taxAmount = 0, deductAmount = 0;
     if (transactionMode === 'buy') {
@@ -1611,13 +1660,14 @@ Gold price sirf Net Gold pe lagta hai</span>
       else taxBase = goldPlusWastage + makingAmount;
       taxAmount = taxBase * (taxPercent / 100);
     } else {
-      // Sell: refining+margin % deduction
-      const afterWastage = Math.max(0, pureGoldPrice - wastageAmount);
+      // Sell: refining+margin % deduction (charged gold basis, main calc jaisa)
+      const afterWastage = Math.max(0, chargedNetGold - wastageAmount);
       deductAmount = afterWastage * (num('sellDeductPercent') / 100);
     }
 
     return {
       pureGoldPrice: Math.round(pureGoldPrice),
+      rate24kExtra: Math.round(rate24kExtra),
       wastageAmount: Math.round(wastageAmount),
       wastageGrams: wastageGrams,
       makingAmount: Math.round(makingAmount),
@@ -1648,6 +1698,7 @@ Gold price sirf Net Gold pe lagta hai</span>
       // Original per-gram (24K base se) — manual ke muqable dikhane ke liye
       origPerGram: (parseFloat(val('rate24k')) / TOLA_GRAMS) * ((parseFloat(val('inputKarat')) || 24) / 24),
       karat: parseFloat(val('inputKarat')) || 0,
+      rateBasis: rateBasis,   // 'karat' | '24k'
 
       // Weight
       weight: parseFloat(val('itemWeightGram')) || 0,
@@ -1727,6 +1778,9 @@ Gold price sirf Net Gold pe lagta hai</span>
       // Rows sirf tabhi jab value ho — saaf dikhe
       const rows = [];
       rows.push(['24K Tola Base', `Rs. ${fmt(it.rate24k)}`]);
+      if (it.rateBasis === '24k' && it.karat < 24) {
+        rows.push(['⚠️ Rate Basis', `24K rate (item ${it.karat}K par)`]);
+      }
       if (it.perGramRate > 0) {
         // Manual daala tha — original (24K base se) aur manual dono dikhao + farak
         const orig = it.origPerGram ? Math.round(it.origPerGram) : 0;
@@ -1784,7 +1838,8 @@ Gold price sirf Net Gold pe lagta hai</span>
         const arr = [];
         // Purani entries: pureGoldPrice na ho to rawGoldPrice fallback
         const pg = (a.pureGoldPrice !== undefined) ? a.pureGoldPrice : a.rawGoldPrice;
-        arr.push(['Pure Gold Price', `Rs. ${fmt(pg)}`]);
+        arr.push([`Pure Gold Price (${it.karat}K)`, `Rs. ${fmt(pg)}`]);
+        if (a.rate24kExtra > 0) arr.push(['24K Rate Extra (+)', `Rs. ${fmt(a.rate24kExtra)}`]);
         if (a.wastageAmount > 0) arr.push([it.isBuy ? 'Wastage (+)' : 'Kaat (−)', `Rs. ${fmt(a.wastageAmount)}`]);
         if (it.isBuy && a.makingAmount > 0) arr.push(['Making (+)', `Rs. ${fmt(a.makingAmount)}`]);
         if (it.isBuy && a.taxAmount > 0) arr.push(['Tax / GST (+)', `Rs. ${fmt(a.taxAmount)}`]);
@@ -1876,12 +1931,15 @@ Gold price sirf Net Gold pe lagta hai</span>
       const pureGold = (a.pureGoldPrice !== undefined) ? a.pureGoldPrice : (a.rawGoldPrice || 0);
       return {
         name: it.name, mode: it.mode, isBuy: it.isBuy, total, net, karat, pureGrams,
-        goldPerGram: net > 0 ? pureGold / net : 0,   // us karat ka gold per-gram
-        // BEST isi par: total ÷ khaalis sone ke gram = 1 gram asli sona kitne ka pada
-        // (karat + weight + rate — sab ka farak khud khatam)
+        gross: it.weight || 0, stoneWt: it.stone || 0,
+        goldPerGram: net > 0 ? pureGold / net : 0,   // us karat ka gold per-gram (item karat par)
+        // Sirf GOLD rate 24K par (pure gold ÷ khaalis sone ke gram) — making/wastage/tax ke baghair
+        goldRate24k: pureGrams > 0 ? pureGold / pureGrams : 0,
+        // BEST isi par: total ÷ khaalis sone ke gram = 1 gram asli sona SAB milake kitne ka pada
         effRate: pureGrams > 0 ? total / pureGrams : (net > 0 ? total / net : total),
         pureGold: pureGold,
-        extra: Math.max(0, total - pureGold),           // Total − Pure Gold (wastage+making+tax+stone)
+        rate24kExtra: a.rate24kExtra || 0,
+        extra: Math.max(0, total - pureGold),           // Total − Pure Gold (24K extra + wastage+making+tax+stone)
         wastage: a.wastageAmount || 0,
         making: a.makingAmount || 0,
         tax: a.taxAmount || 0,
@@ -1905,58 +1963,79 @@ Gold price sirf Net Gold pe lagta hai</span>
       return bi;
     }
 
-    // Buy mein har kharcha KAM behtar; Sell mein gold/total ZYADA behtar
-    // Ek row banao har metric ke liye: label, key, lower(best=kam?), sirf-buy?
+    // Weight/karat alag? (absolute rows tabhi fair jab weight barabar ho)
+    const weights = rows.map(r => r.net);
+    const weightDiff = (Math.max(...weights) - Math.min(...weights)) > 0.05;
+    // Jab weight/karat alag ho to absolute (Rs total) rows par green na lagao — halka item hamesha kam dikhega
+    const suppressAbs = weightDiff || !karatsSame;
+
+    // abs:true = weight par depend karta hai (kam = zaroori nahi behtar). abs:false = per-gram (fair).
     const metrics = [];
-    metrics.push({ label: '💰 Total', key: 'total', lower: allBuy });
-    // Total ÷ khaalis (24K) sona — crown isi par (karat + weight ka farak hata deta hai)
-    if (canUseEff && allBuy) metrics.push({ label: '⭐ Khaalis sona (24K) /gram', key: 'effRate', lower: true });
+    metrics.push({ label: '💰 Total', key: 'total', lower: allBuy, abs: true });
+    // Total ÷ khaalis (24K) sona — crown isi par (SAB milake, per pure gram)
+    if (canUseEff && allBuy) metrics.push({ label: '⭐ Khaalis /gram (SAB milake)', key: 'effRate', lower: true });
+    // Sirf gold rate 24K par (making/wastage ke baghair) — pure gold ÷ khaalis gram
+    if (canUseEff) metrics.push({ label: '🥇 Sirf Gold rate (24K) /gram', key: 'goldRate24k', lower: allBuy });
+    // Weight (net gold) dikhao — taake pata rahe compare net par ho raha (gross nahi)
+    metrics.push({ label: '⚖️ Net Gold Weight', key: 'net', lower: false, isWeight: true });
     // Har item ka karat dikhao taake pata rahe kaunsa kitna khara
     metrics.push({ label: '📊 Karat', key: 'karat', lower: false, isKarat: true });
     if (hasAmounts) {
-      metrics.push({ label: '🪙 Gold rate /gram', key: 'goldPerGram', lower: allBuy });
-      metrics.push({ label: '🟡 Pure Gold Price', key: 'pureGold', lower: allBuy });
-      if (allBuy) metrics.push({ label: '➖ Extra (Total − Gold)', key: 'extra', lower: true });
-      if (rows.some(r => r.wastage > 0)) metrics.push({ label: '➕ Wastage', key: 'wastage', lower: true });
-      if (allBuy && rows.some(r => r.making > 0)) metrics.push({ label: '🔨 Making', key: 'making', lower: true });
-      if (allBuy && rows.some(r => r.tax > 0)) metrics.push({ label: '🧾 Tax', key: 'tax', lower: true });
-      if (rows.some(r => r.stone > 0)) metrics.push({ label: '💎 Stone Price', key: 'stone', lower: true });
-      if (allSell && rows.some(r => r.deduct > 0)) metrics.push({ label: '✂️ Refining+Margin', key: 'deduct', lower: true });
+      metrics.push({ label: '🪙 Gold rate /gram (item karat)', key: 'goldPerGram', lower: allBuy, abs: true });
+      metrics.push({ label: '🟡 Pure Gold Price', key: 'pureGold', lower: allBuy, abs: true });
+      if (rows.some(r => r.rate24kExtra > 0)) metrics.push({ label: '⚠️ 24K Rate Extra', key: 'rate24kExtra', lower: true, abs: true });
+      if (allBuy) metrics.push({ label: '➖ Extra (Total − Gold)', key: 'extra', lower: true, abs: true });
+      if (rows.some(r => r.wastage > 0)) metrics.push({ label: '➕ Wastage', key: 'wastage', lower: true, abs: true });
+      if (allBuy && rows.some(r => r.making > 0)) metrics.push({ label: '🔨 Making', key: 'making', lower: true, abs: true });
+      if (allBuy && rows.some(r => r.tax > 0)) metrics.push({ label: '🧾 Tax', key: 'tax', lower: true, abs: true });
+      if (rows.some(r => r.stone > 0)) metrics.push({ label: '💎 Stone Price', key: 'stone', lower: true, abs: true });
+      if (allSell && rows.some(r => r.deduct > 0)) metrics.push({ label: '✂️ Refining+Margin', key: 'deduct', lower: true, abs: true });
     }
 
-    // Overall BEST = per-gram effective rate par (total ÷ net gold).
-    // Isse weight/making ka farak khud hisaab mein aa jaata hai — jo zyada sona kam paise mein de wo jeete.
-    // (Agar net weight na ho to total par fallback.)
+    // Overall BEST = per-gram effective rate par (total ÷ khaalis sona). Weight/karat fair.
     const overallBi = canUseEff ? bestOf('effRate', allBuy) : bestOf('total', allBuy);
     const bestTotal = rows[overallBi].total;
 
-    // Har metric ki row banao (best cell green highlight)
+    // Har metric ki row banao. Absolute rows par green sirf tab jab weight barabar ho.
     const metricRows = metrics.map(m => {
-      // Karat row: koi best highlight nahi (karat behtar/bura nahi hota)
-      const bi = m.isKarat ? -1 : bestOf(m.key, m.lower);
+      if (m.isKarat) {
+        const cells = rows.map((r, i) => `<td class="num${i === overallBi ? ' cmp-col-best' : ''}" style="color:#c9b458;">${r.karat ? r.karat + 'K' : '—'}</td>`).join('');
+        return `<tr><td class="lbl">${m.label}</td>${cells}</tr>`;
+      }
+      if (m.isWeight) {
+        const cells = rows.map((r, i) => {
+          const note = r.stoneWt > 0 ? `<span style="color:#6b7688;font-size:10px;"> (gross ${r.gross}g −${r.stoneWt})</span>` : '';
+          return `<td class="num${i === overallBi ? ' cmp-col-best' : ''}" style="color:#9fb4d0;">${r.net.toFixed(3)} g${note}</td>`;
+        }).join('');
+        return `<tr><td class="lbl">${m.label}</td>${cells}</tr>`;
+      }
+      // Absolute row + weight alag → koi "best" nahi (misleading), sirf column tint
+      const highlight = !(m.abs && suppressAbs);
+      const bi = highlight ? bestOf(m.key, m.lower) : -1;
+      // Best VALUE (rounded, jaisa display hota hai) — taake tie par sab green ho
+      const bestValRounded = bi >= 0 ? Math.round(rows[bi][m.key]) : null;
       const cells = rows.map((r, i) => {
-        if (m.isKarat) {
-          const bestCol = i === overallBi ? ' cmp-col-best' : '';
-          return `<td class="num${bestCol}" style="color:#c9b458;">${r.karat ? r.karat + 'K' : '—'}</td>`;
-        }
-        const isBest = i === bi;
+        // Tie: display mein barabar (rounded) ho to wo bhi best
+        const isBest = highlight && bestValRounded !== null && Math.round(r[m.key]) === bestValRounded;
         const bestCol = i === overallBi ? ' cmp-col-best' : '';
-        return `<td class="num${isBest ? ' win' : bestCol}">Rs. ${fmt(r[m.key])}</td>`;
+        const dim = (m.abs && suppressAbs) ? ' style="color:#8b93a3;"' : '';
+        return `<td class="num${isBest ? ' win' : bestCol}"${dim}>Rs. ${fmt(r[m.key])}</td>`;
       }).join('');
       return `<tr><td class="lbl">${m.label}</td>${cells}</tr>`;
     }).join('');
-
-    // Karat/weight alag ho to bata do ke best khaalis sone par nikala gaya
-    const weights = rows.map(r => r.net);
-    const weightDiff = (Math.max(...weights) - Math.min(...weights)) > 0.05;
     const fairNote = (canUseEff && (!karatsSame || weightDiff))
       ? `<div style="color:#ffb020;font-size:12px;margin:8px 0;line-height:1.5;">⚠️ ${!karatsSame ? 'Karat' : 'Weight'} alag hai — isliye best <strong>"Khaalis sona (24K) /gram"</strong> par nikala hai (total ÷ asli sone ke gram). Isse karat, weight aur rate sab ka farak khud khatam ho jaata hai.</div>`
       : '';
     const weightWarn = fairNote;
 
-    const modeNote = allBuy ? '🛒 Buy — <strong>Khaalis sona (24K) /gram</strong> jitna kam, wo best (us paise mein sabse zyada asli sona).'
+    const modeNote = allBuy ? '🛒 Buy — best <strong>"Khaalis sona (24K) /gram"</strong> par (total ÷ asli sone ke gram). Jitna kam, us paise mein utna zyada asli sona.'
       : allSell ? '💰 Sell — gold/total jitna <strong>zyada</strong> utna behtar.'
       : '⚠️ Buy aur Sell mix hain — muqabla theek nahi. Ek jaisi mode ke items chuno.';
+
+    // Weight alag ho to samjha do ke absolute rows (total/gold/making) grey kyun
+    const absNote = (suppressAbs && hasAmounts)
+      ? `<div style="color:#8b93a3;font-size:11px;margin:6px 0;line-height:1.5;">ℹ️ Weight/karat alag hone ki wajah se neeche wali <span style="color:#8b93a3;">grey</span> (Total, Pure Gold, Wastage, Making…) par green nahi lagaya — kyunki halka item hamesha kam dikhega (wo "best" nahi hota). Sahi muqabla sirf <strong style="color:#00e676;">per-gram</strong> wali lines par hai.</div>`
+      : '';
 
     // Header: naam + best crown
     const headCells = rows.map((r, i) =>
@@ -2002,6 +2081,11 @@ Gold price sirf Net Gold pe lagta hai</span>
           </table>
         </div>
         <div style="color:#6b7688;font-size:11px;margin-top:8px;">🟢 Green = us cheez mein sabse behtar${allBuy ? ' (kam kharcha)' : ''}</div>
+        ${canUseEff ? `<div style="color:#9da8b9;font-size:11px;margin-top:6px;line-height:1.6;background:#141a24;border:1px solid #2d3748;border-radius:6px;padding:8px;">
+          <strong>⭐ Khaalis /gram</strong> = Total ÷ khaalis sona — <strong>sab milake</strong> (gold + making + wastage + tax). BEST isi par.<br>
+          <strong>🥇 Sirf Gold rate (24K)</strong> = Pure Gold ÷ khaalis sona — <strong>sirf sone ka rate</strong> (making/wastage ke baghair). Isse pata chale kaunsa sona hi sasta de raha.
+        </div>` : ''}
+        ${absNote}
         ${summary}
         ${!hasAmounts ? '<div style="color:#ffb020;font-size:11px;margin-top:8px;">⚠️ Kuch purani entries mein detail nahi thi — sirf Total compare hua.</div>' : ''}
         <button type="button" class="compare-close" id="btnCloseCompare">✕ Compare band karo</button>
@@ -2047,6 +2131,8 @@ Gold price sirf Net Gold pe lagta hai</span>
     document.getElementById('btnTaxSubtotal').addEventListener('click', () => setTaxMode('subtotal'));
     document.getElementById('btnTaxMaking').addEventListener('click', () => setTaxMode('making'));
     document.getElementById('btnTaxGold').addEventListener('click', () => setTaxMode('gold'));
+    document.getElementById('btnRateKarat').addEventListener('click', () => setRateBasis('karat'));
+    document.getElementById('btnRate24k').addEventListener('click', () => setRateBasis('24k'));
     document.getElementById('btnCopyReceipt').addEventListener('click', copyReceiptToClipboard);
     document.getElementById('btnResetAll').addEventListener('click', resetAllFields);
 
