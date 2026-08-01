@@ -973,6 +973,10 @@ Gold price sirf Net Gold pe lagta hai</span>
       </div>
     </div>
     <input type="number" id="wastageValue" inputmode="decimal" autocomplete="off" value="" step="0.5">
+    <!-- Live conversion: % <-> gram <-> Rs -->
+    <div class="rate-info-badge" id="wastageConvBadge" style="display:none;">
+      <span id="wastageConvText">—</span>
+    </div>
     <span class="words-helper" id="wastageHint" style="display:none;">💡 Wastage weight (gram) mein add hoga — jaise 0.770 g. Ye net gold mein plus hoga, phir uspe gold+making+tax lagega.</span>
   </div>
 
@@ -1381,6 +1385,28 @@ Gold price sirf Net Gold pe lagta hai</span>
     // Gold + wastage (ye woh number hai jispe making% aur tax lagta hai) — charged basis
     const goldPlusWastage = chargedNetGold + wastageAmount;
 
+    // Wastage conversion: % ↔ gram ↔ Rs (badge + breakdown + history ke liye)
+    const wGramEq = karatGramPrice > 0 ? (wastageAmount / karatGramPrice) : 0;
+    const wPctEq = chargedNetGold > 0 ? (wastageAmount / chargedNetGold) * 100 : 0;
+    let wastageConvStr = '';   // breakdown/history mein wastage line ke saath
+    const wConvBadge = document.getElementById('wastageConvBadge');
+    const wConvText = document.getElementById('wastageConvText');
+    if (wastageInputValue > 0 && karatGramPrice > 0) {
+      wConvBadge.style.display = 'flex';
+      if (wastageMode === 'percent') {
+        wastageConvStr = `${wGramEq.toFixed(3)} g sona`;
+        wConvText.innerHTML = `<strong>${wastageInputValue}%</strong> = <strong style="color:#00e676;">${wGramEq.toFixed(3)} g</strong> sona = <strong style="color:#00e676;">Rs. ${Math.round(wastageAmount).toLocaleString('en-PK')}</strong>`;
+      } else if (wastageMode === 'weight') {
+        wastageConvStr = `${wPctEq.toFixed(2)}% net gold`;
+        wConvText.innerHTML = `<strong>${wastageInputValue} g</strong> = <strong style="color:#00e676;">${wPctEq.toFixed(2)}%</strong> (net gold ka) = <strong style="color:#00e676;">Rs. ${Math.round(wastageAmount).toLocaleString('en-PK')}</strong>`;
+      } else {
+        wastageConvStr = `${wGramEq.toFixed(3)} g = ${wPctEq.toFixed(2)}%`;
+        wConvText.innerHTML = `<strong>Rs. ${wastageInputValue.toLocaleString('en-PK')}</strong> = <strong style="color:#00e676;">${wGramEq.toFixed(3)} g</strong> = <strong style="color:#00e676;">${wPctEq.toFixed(2)}%</strong> (net gold ka)`;
+      }
+    } else {
+      wConvBadge.style.display = 'none';
+    }
+
     let totalMaking = 0;
     let taxAmount = 0;
     let totalPrice = 0;
@@ -1430,7 +1456,7 @@ Gold price sirf Net Gold pe lagta hai</span>
         • <strong>Selected Rate (${selectedKarat}K):</strong> Rs. ${Math.round(karatGramPrice).toLocaleString('en-PK')} / gram${usingManualPerGram ? ' <em>(Manual)</em>' : (rateBasis === '24k' && selectedKarat < 24 ? ' <em style="color:#ffb020;">(24K rate!)</em>' : '')}<br>
         ${stoneLineBuy}• <strong>Net Gold Weight:</strong> ${netGrams.toFixed(3)} g<br>
         ${wastageWtLine}• <strong>Pure Gold Price (${selectedKarat}K):</strong> Rs. ${Math.round(pureGoldPrice).toLocaleString('en-PK')} <em>(${netGrams.toFixed(3)}g × ${Math.round(realGramRate).toLocaleString('en-PK')})</em><br>
-        ${extra24kLine}• <strong>Wastage (+${wastageLabelMode}):</strong> Rs. ${Math.round(wastageAmount).toLocaleString('en-PK')}<br>
+        ${extra24kLine}• <strong>Wastage (+${wastageLabelMode}):</strong> Rs. ${Math.round(wastageAmount).toLocaleString('en-PK')}${wastageConvStr ? ` <em style="color:#9da8b9;">(= ${wastageConvStr})</em>` : ''}<br>
         • <strong>Making Charges (${makingLabelMode}):</strong> Rs. ${Math.round(totalMaking).toLocaleString('en-PK')}<br>
         • <strong>Tax (${taxPercent}% on ${taxLabelMode}):</strong> Rs. ${Math.round(taxAmount).toLocaleString('en-PK')}<br>
         ${stonePriceLine}<strong style="color:#ffd700;">= TOTAL: Rs. ${Math.round(totalPrice).toLocaleString('en-PK')}</strong>
@@ -1467,7 +1493,7 @@ Gold price sirf Net Gold pe lagta hai</span>
         • <strong>Nag / Stone Deduction:</strong> -${stoneDeduction.toFixed(3)} grams<br>
         • <strong>Net Gold Weight:</strong> ${netGrams.toFixed(3)} grams<br>
         • <strong>Base Gold Value:</strong> Rs. ${Math.round(sellGoldValue).toLocaleString('en-PK')}<br>
-        • <strong>Kaat / Deduction (-${sellWastageLabel}):</strong> -Rs. ${Math.round(sellWastage).toLocaleString('en-PK')}${deductLine}${stonePriceLineSell}
+        • <strong>Kaat / Deduction (-${sellWastageLabel}):</strong> -Rs. ${Math.round(sellWastage).toLocaleString('en-PK')}${wastageConvStr ? ` <em style="color:#9da8b9;">(= ${wastageConvStr})</em>` : ''}${deductLine}${stonePriceLineSell}
       `;
     }
 
@@ -1670,6 +1696,8 @@ Gold price sirf Net Gold pe lagta hai</span>
       rate24kExtra: Math.round(rate24kExtra),
       wastageAmount: Math.round(wastageAmount),
       wastageGrams: wastageGrams,
+      wastageGramsEq: karatGramPrice > 0 ? wastageAmount / karatGramPrice : 0,   // wastage = kitne gram sona
+      wastagePctEq: chargedNetGold > 0 ? (wastageAmount / chargedNetGold) * 100 : 0, // = net gold ka kitna %
       makingAmount: Math.round(makingAmount),
       taxAmount: Math.round(taxAmount),
       deductAmount: Math.round(deductAmount),
@@ -1840,7 +1868,14 @@ Gold price sirf Net Gold pe lagta hai</span>
         const pg = (a.pureGoldPrice !== undefined) ? a.pureGoldPrice : a.rawGoldPrice;
         arr.push([`Pure Gold Price (${it.karat}K)`, `Rs. ${fmt(pg)}`]);
         if (a.rate24kExtra > 0) arr.push(['24K Rate Extra (+)', `Rs. ${fmt(a.rate24kExtra)}`]);
-        if (a.wastageAmount > 0) arr.push([it.isBuy ? 'Wastage (+)' : 'Kaat (−)', `Rs. ${fmt(a.wastageAmount)}`]);
+        if (a.wastageAmount > 0) {
+          // Wastage ke saath conversion (kitne gram / kitna %)
+          let wConv = '';
+          if (a.wastageGramsEq !== undefined && a.wastagePctEq !== undefined) {
+            wConv = ` <span style="color:#6b7688;font-weight:400;">(${a.wastageGramsEq.toFixed(3)}g / ${a.wastagePctEq.toFixed(1)}%)</span>`;
+          }
+          arr.push([it.isBuy ? 'Wastage (+)' : 'Kaat (−)', `Rs. ${fmt(a.wastageAmount)}${wConv}`]);
+        }
         if (it.isBuy && a.makingAmount > 0) arr.push(['Making (+)', `Rs. ${fmt(a.makingAmount)}`]);
         if (it.isBuy && a.taxAmount > 0) arr.push(['Tax / GST (+)', `Rs. ${fmt(a.taxAmount)}`]);
         if (!it.isBuy && a.deductAmount > 0) arr.push(['Refining + Margin (−)', `Rs. ${fmt(a.deductAmount)}`]);
