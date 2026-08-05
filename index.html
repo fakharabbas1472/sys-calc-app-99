@@ -1535,6 +1535,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     document.getElementById('inputKarat').value = '21';
     if (typeof setRateBasis === 'function') setRateBasis('karat');
     if (typeof clearPendingPhoto === 'function') clearPendingPhoto();
+    lastEditName = '';
     calculateItemPrice();
   }
 
@@ -1578,6 +1579,7 @@ Gold price sirf Net Gold pe lagta hai</span>
 
   /* ---------- Photo attach (compress + preview) ---------- */
   let pendingImage = null;   // compressed data-URL jo save hoga
+  let lastEditName = '';     // edit ke baad save par default naam
 
   // Image ko chhota (compress) karta hai taake storage na bhare
   function compressImage(file, maxDim, quality) {
@@ -1711,7 +1713,8 @@ Gold price sirf Net Gold pe lagta hai</span>
   }
 
   function addToHistory() {
-    const name = (prompt('Is calculation ka naam? (jaise shop ka naam ya item)') || '').trim();
+    // Edit ke baad purana naam default aaye (edit karo ya waisa hi rakho)
+    const name = (prompt('Is calculation ka naam? (jaise shop ka naam ya item)', lastEditName) || '').trim();
     if (!name) return; // cancel ya khali
 
     const val = id => document.getElementById(id).value;
@@ -1775,6 +1778,7 @@ Gold price sirf Net Gold pe lagta hai</span>
       }
     }
     clearPendingPhoto();
+    lastEditName = '';   // agla save fresh ho
     renderHistory();
 
     const btn = document.getElementById('btnSaveHistory');
@@ -1817,6 +1821,17 @@ Gold price sirf Net Gold pe lagta hai</span>
     // Sell
     set('sellDiscountTola', it.sellDiscount > 0 ? it.sellDiscount : '');
     set('sellDeductPercent', it.sellDeductPercent > 0 ? it.sellDeductPercent : '');
+
+    // Image bhi wapas load karo taake naya save karne par photo saath rahe
+    if (it.image) {
+      pendingImage = it.image;
+      showPhotoPreview(it.image);
+    } else {
+      clearPendingPhoto();
+    }
+
+    // Naam yaad rakho — save par default isi ko dikhaenge
+    lastEditName = it.name || '';
 
     calculateRates();
     calculateItemPrice();
