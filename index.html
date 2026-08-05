@@ -1202,7 +1202,8 @@ Gold price sirf Net Gold pe lagta hai</span>
     const totalMasha = remTola * MASHA_PER_TOLA;
     const masha = Math.floor(totalMasha);
     const remMasha = totalMasha - masha;
-    const rati = Math.round(remMasha * RATI_PER_MASHA * 10) / 10;
+    // Rati 2-decimal — taake gram → TMR → gram round-trip mein value same rahe
+    const rati = Math.round(remMasha * RATI_PER_MASHA * 100) / 100;
     return { tola, masha, rati };
   }
 
