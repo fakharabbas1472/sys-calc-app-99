@@ -770,7 +770,8 @@ Tola ka PKR       =  Tola $ rate × USD/PKR rate</span>
       <div>
         <label for="goldOunceUsd">Gold Price ($/Ounce):</label>
         <input type="number" id="goldOunceUsd" inputmode="decimal" autocomplete="off" value="4000" step="0.1">
-        <a href="https://vunelix.com/symbols/XAUUSD?exchange=FX" target="_blank" class="live-link">🔴 Live Gold Rate Check</a>
+        <a href="https://vunelix.com/symbols/XAUUSD?exchange=FX" target="_blank" class="live-link">🔴 Live Gold Rate</a>
+        &nbsp;<a href="https://vunelix.com/symbols/XAGUSD?exchange=GMC" target="_blank" class="live-link" style="color:#c0c0c0;">⚪ Live Silver Rate</a>
       </div>
       <div>
         <label for="usdPkrRate">USD Rate (PKR):</label>
@@ -1045,6 +1046,9 @@ Gold price sirf Net Gold pe lagta hai</span>
       <h3>📒 Saved History</h3>
       <button type="button" class="clear-history-btn" id="btnClearHistory">🗑️ Clear All</button>
     </div>
+
+    <input type="text" id="historySearch" placeholder="🔍 Search history (naam se)..." autocomplete="off"
+           style="width:100%;margin-bottom:10px;">
 
     <div class="compare-bar" id="compareBar" style="display:none;">
       <span>⚖️ Compare karne ke liye 2+ items select karo:</span>
@@ -1783,6 +1787,43 @@ Gold price sirf Net Gold pe lagta hai</span>
     renderHistory();
   }
 
+  // Saved entry ki values upar calculator mein bhar do (entry rehti hai)
+  function editHistoryItem(id) {
+    const it = getHistory().find(x => x.id === id);
+    if (!it) return;
+    const set = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = (v === undefined || v === null) ? '' : v; };
+
+    // Mode
+    setTransactionMode(it.isBuy ? 'buy' : 'sell');
+    // Rates
+    set('rate24k', it.rate24k);
+    set('perGramRate', it.perGramRate > 0 ? it.perGramRate : '');
+    set('inputKarat', it.karat || 21);
+    setRateBasis(it.rateBasis === '24k' ? '24k' : 'karat');
+    // Weight (gram mode)
+    setWeightMode('gram');
+    set('itemWeightGram', it.weight || 0);
+    // Stone
+    set('stoneWeight', it.stone > 0 ? it.stone : '');
+    set('stonePrice', it.stonePrice > 0 ? it.stonePrice : '');
+    // Wastage
+    set('wastageValue', it.wastageVal > 0 ? it.wastageVal : '');
+    setWastageMode(it.wastageMode || 'percent');
+    // Making / Tax (buy)
+    set('makingValue', it.makingVal > 0 ? it.makingVal : '');
+    setMakingMode(it.makingMode || 'fixed');
+    set('taxRate', it.taxRate > 0 ? it.taxRate : '');
+    setTaxMode(it.taxMode || 'subtotal');
+    // Sell
+    set('sellDiscountTola', it.sellDiscount > 0 ? it.sellDiscount : '');
+    set('sellDeductPercent', it.sellDeductPercent > 0 ? it.sellDeductPercent : '');
+
+    calculateRates();
+    calculateItemPrice();
+    // Upar scroll taake user ko dikhe values aa gayi
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   function clearAllHistory() {
     if (!confirm('Saari saved history clear kar dein? Ye wapas nahi aayegi.')) return;
     saveHistory([]);
@@ -1794,10 +1835,21 @@ Gold price sirf Net Gold pe lagta hai</span>
   }
 
   function renderHistory() {
-    const list = getHistory();
+    const allList = getHistory();
     const box = document.getElementById('historyList');
-    if (!list.length) {
+    if (!allList.length) {
       box.innerHTML = '<div class="history-empty">Abhi koi saved calculation nahi. Upar "💾 Save" dabao to yahan aayega.</div>';
+      document.getElementById('compareBar').style.display = 'none';
+      document.getElementById('compareResult').innerHTML = '';
+      return;
+    }
+    // Search filter (naam se)
+    const q = (document.getElementById('historySearch').value || '').trim().toLowerCase();
+    const list = q ? allList.filter(it => (it.name || '').toLowerCase().includes(q)) : allList;
+    if (!list.length) {
+      box.innerHTML = '<div class="history-empty">🔍 "' + escapeHtml(q) + '" se koi entry nahi mili.</div>';
+      document.getElementById('compareBar').style.display = allList.length >= 2 ? 'flex' : 'none';
+      updateCompareBtn();
       return;
     }
     const fmt = n => Number(n || 0).toLocaleString('en-PK');
@@ -1910,12 +1962,16 @@ Gold price sirf Net Gold pe lagta hai</span>
         ${amountRows}
         ${it.image ? `<img class="hi-thumb" src="${it.image}" data-full="${it.id}" alt="photo">` : ''}
         <div class="hi-meta" style="margin-top:6px;">🕒 ${escapeHtml(it.dateStr)}</div>
+        <button type="button" class="hi-edit" data-id="${it.id}" style="background:transparent;border:none;color:#6366f1;font-size:12px;cursor:pointer;padding:0;margin-top:8px;margin-right:14px;font-weight:600;">✏️ Edit</button>
         <button type="button" class="hi-del" data-id="${it.id}">🗑️ Delete</button>
       </div>`;
     }).join('');
 
     box.querySelectorAll('.hi-del').forEach(b => {
       b.addEventListener('click', () => deleteHistoryItem(b.getAttribute('data-id')));
+    });
+    box.querySelectorAll('.hi-edit').forEach(b => {
+      b.addEventListener('click', () => editHistoryItem(b.getAttribute('data-id')));
     });
     // Thumbnail click → bari image
     box.querySelectorAll('.hi-thumb').forEach(img => {
@@ -1927,7 +1983,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     });
 
     // Compare bar sirf tab dikhe jab 2+ entries hon
-    document.getElementById('compareBar').style.display = list.length >= 2 ? 'flex' : 'none';
+    document.getElementById('compareBar').style.display = allList.length >= 2 ? 'flex' : 'none';
     document.getElementById('compareResult').innerHTML = '';
     updateCompareBtn();
   }
@@ -1965,7 +2021,7 @@ Gold price sirf Net Gold pe lagta hai</span>
       const pureGrams = (karat > 0) ? net * (karat / 24) : 0;
       const pureGold = (a.pureGoldPrice !== undefined) ? a.pureGoldPrice : (a.rawGoldPrice || 0);
       return {
-        name: it.name, mode: it.mode, isBuy: it.isBuy, total, net, karat, pureGrams,
+        id: it.id, name: it.name, mode: it.mode, isBuy: it.isBuy, total, net, karat, pureGrams,
         gross: it.weight || 0, stoneWt: it.stone || 0,
         goldPerGram: net > 0 ? pureGold / net : 0,   // us karat ka gold per-gram (item karat par)
         // Sirf GOLD rate 24K par (pure gold ÷ khaalis sone ke gram) — making/wastage/tax ke baghair
@@ -2072,9 +2128,9 @@ Gold price sirf Net Gold pe lagta hai</span>
       ? `<div style="color:#8b93a3;font-size:11px;margin:6px 0;line-height:1.5;">ℹ️ Weight/karat alag hone ki wajah se neeche wali <span style="color:#8b93a3;">grey</span> (Total, Pure Gold, Wastage, Making…) par green nahi lagaya — kyunki halka item hamesha kam dikhega (wo "best" nahi hota). Sahi muqabla sirf <strong style="color:#00e676;">per-gram</strong> wali lines par hai.</div>`
       : '';
 
-    // Header: naam + best crown
+    // Header: naam + best crown + remove (✕) chip
     const headCells = rows.map((r, i) =>
-      `<th class="${i === overallBi ? 'win' : ''}">${escapeHtml(r.name)}${i === overallBi ? '<span class="cmp-crown">🏆 BEST</span>' : ''}</th>`
+      `<th class="${i === overallBi ? 'win' : ''}">${escapeHtml(r.name)}${i === overallBi ? '<span class="cmp-crown">🏆 BEST</span>' : ''}<br><button type="button" class="cmp-remove" data-id="${r.id}" title="Compare se hatao" style="background:#3a2020;color:#ff8f8f;border:none;border-radius:10px;font-size:10px;font-weight:700;padding:2px 8px;margin-top:4px;cursor:pointer;">✕ hatao</button></th>`
     ).join('');
 
     // Summary — best kis wajah se (buy: per-gram sabse sasta / sell: sabse zyada paisa)
@@ -2128,6 +2184,17 @@ Gold price sirf Net Gold pe lagta hai</span>
 
     document.getElementById('btnCloseCompare').addEventListener('click', () => {
       document.getElementById('compareResult').innerHTML = '';
+    });
+    // Compare result se kisi item ko hatao (uska checkbox uncheck + dobara compare)
+    document.querySelectorAll('.cmp-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rid = btn.getAttribute('data-id');
+        const cb = document.querySelector(`.hi-check[data-id="${rid}"]`);
+        if (cb) cb.checked = false;
+        updateCompareBtn();
+        if (getCheckedIds().length >= 2) runCompare();
+        else document.getElementById('compareResult').innerHTML = '';   // 2 se kam bache to band
+      });
     });
     document.getElementById('compareResult').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
@@ -2187,6 +2254,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     document.getElementById('btnSaveHistory').addEventListener('click', addToHistory);
     document.getElementById('btnClearHistory').addEventListener('click', clearAllHistory);
     document.getElementById('btnCompare').addEventListener('click', runCompare);
+    document.getElementById('historySearch').addEventListener('input', renderHistory);
 
     // Photo attach
     document.getElementById('btnAddPhoto').addEventListener('click', () => {
