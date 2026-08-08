@@ -962,6 +962,11 @@ Gold price sirf Net Gold pe lagta hai</span>
       </div>
       <span class="words-helper">💡 Bechte waqt refining loss (1-3%) + margin (3-8%) — gold value se minus hoga</span>
     </div>
+    <div class="input-group">
+      <label for="sellPerGramCut">✂️ Per Gram Cut / Kaat (PKR per gram):</label>
+      <input type="number" id="sellPerGramCut" inputmode="decimal" autocomplete="off" value="" step="50" placeholder="Jaise 200 — har gram par itna cut">
+      <span class="words-helper" id="sellPerGramCutHint">💡 Har gram par fixed Rs cut (net gold × cut). Rate/margin se alag, seedha minus.</span>
+    </div>
   </div>
 
   <div class="input-group">
@@ -1477,7 +1482,11 @@ Gold price sirf Net Gold pe lagta hai</span>
       const deductPercent = parseFloat(document.getElementById('sellDeductPercent').value) || 0;
       const deductAmount = afterWastage * (deductPercent / 100);
 
-      totalPrice = Math.max(0, afterWastage - deductAmount) + stonePrice;
+      // Per gram cut (net gold × Rs/gram) — seedha minus
+      const perGramCut = parseFloat(document.getElementById('sellPerGramCut').value) || 0;
+      const perGramCutAmount = netGrams * perGramCut;
+
+      totalPrice = Math.max(0, afterWastage - deductAmount - perGramCutAmount) + stonePrice;
       const discountTola = parseFloat(document.getElementById('sellDiscountTola').value) || 0;
 
       const sellWastageLabel = (wastageMode === 'weight')
@@ -1486,6 +1495,10 @@ Gold price sirf Net Gold pe lagta hai</span>
 
       const deductLine = deductPercent > 0
         ? `<br>• <strong>Refining + Margin (-${deductPercent}%):</strong> -Rs. ${Math.round(deductAmount).toLocaleString('en-PK')}`
+        : '';
+
+      const perGramCutLine = perGramCut > 0
+        ? `<br>• <strong>Per Gram Cut (-Rs.${perGramCut}/g × ${netGrams.toFixed(3)}g):</strong> -Rs. ${Math.round(perGramCutAmount).toLocaleString('en-PK')}`
         : '';
 
       const stonePriceLineSell = stonePrice > 0
@@ -1498,7 +1511,7 @@ Gold price sirf Net Gold pe lagta hai</span>
         • <strong>Nag / Stone Deduction:</strong> -${stoneDeduction.toFixed(3)} grams<br>
         • <strong>Net Gold Weight:</strong> ${netGrams.toFixed(3)} grams<br>
         • <strong>Base Gold Value:</strong> Rs. ${Math.round(sellGoldValue).toLocaleString('en-PK')}<br>
-        • <strong>Kaat / Deduction (-${sellWastageLabel}):</strong> -Rs. ${Math.round(sellWastage).toLocaleString('en-PK')}${wastageConvStr ? ` <em style="color:#9da8b9;">(= ${wastageConvStr})</em>` : ''}${deductLine}${stonePriceLineSell}
+        • <strong>Kaat / Deduction (-${sellWastageLabel}):</strong> -Rs. ${Math.round(sellWastage).toLocaleString('en-PK')}${wastageConvStr ? ` <em style="color:#9da8b9;">(= ${wastageConvStr})</em>` : ''}${deductLine}${perGramCutLine}${stonePriceLineSell}
       `;
     }
 
@@ -1526,6 +1539,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     document.getElementById('stonePrice').value = '';
     document.getElementById('sellDiscountTola').value = '';
     document.getElementById('sellDeductPercent').value = '';
+    document.getElementById('sellPerGramCut').value = '';
     document.getElementById('wastageValue').value = '';
     document.getElementById('makingValue').value = '';
     document.getElementById('taxRate').value = '';
@@ -1679,7 +1693,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     }
     const goldPlusWastage = chargedNetGold + wastageAmount;
 
-    let makingAmount = 0, taxAmount = 0, deductAmount = 0;
+    let makingAmount = 0, taxAmount = 0, deductAmount = 0, perGramCutAmount = 0;
     if (transactionMode === 'buy') {
       const mVal = num('makingValue');
       if (makingMode === 'fixed') makingAmount = mVal;
@@ -1696,6 +1710,7 @@ Gold price sirf Net Gold pe lagta hai</span>
       // Sell: refining+margin % deduction (charged gold basis, main calc jaisa)
       const afterWastage = Math.max(0, chargedNetGold - wastageAmount);
       deductAmount = afterWastage * (num('sellDeductPercent') / 100);
+      perGramCutAmount = netGrams * num('sellPerGramCut');
     }
 
     return {
@@ -1708,6 +1723,7 @@ Gold price sirf Net Gold pe lagta hai</span>
       makingAmount: Math.round(makingAmount),
       taxAmount: Math.round(taxAmount),
       deductAmount: Math.round(deductAmount),
+      perGramCutAmount: Math.round(perGramCutAmount),
       stonePrice: Math.round(stonePrice),
       netGrams: netGrams
     };
@@ -1750,6 +1766,7 @@ Gold price sirf Net Gold pe lagta hai</span>
       taxMode: taxMode,                                           // 'subtotal' | 'making' | 'gold'
       sellDiscount: parseFloat(val('sellDiscountTola')) || 0,
       sellDeductPercent: parseFloat(val('sellDeductPercent')) || 0,
+      sellPerGramCut: parseFloat(val('sellPerGramCut')) || 0,
 
       // Calculated amounts (result ke asli numbers)
       amounts: getCalculatedAmounts(),
@@ -1822,6 +1839,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     // Sell
     set('sellDiscountTola', it.sellDiscount > 0 ? it.sellDiscount : '');
     set('sellDeductPercent', it.sellDeductPercent > 0 ? it.sellDeductPercent : '');
+    set('sellPerGramCut', it.sellPerGramCut > 0 ? it.sellPerGramCut : '');
 
     // Image bhi wapas load karo taake naya save karne par photo saath rahe
     if (it.image) {
@@ -1919,6 +1937,9 @@ Gold price sirf Net Gold pe lagta hai</span>
       if (!it.isBuy && it.sellDeductPercent > 0) {
         rows.push(['Refining + Margin', `${it.sellDeductPercent}%`]);
       }
+      if (!it.isBuy && it.sellPerGramCut > 0) {
+        rows.push(['Per Gram Cut', `Rs. ${fmt(it.sellPerGramCut)}/g`]);
+      }
 
       const detailRows = rows.map(r =>
         `<div style="display:flex;justify-content:space-between;gap:10px;padding:2px 0;">
@@ -1947,6 +1968,7 @@ Gold price sirf Net Gold pe lagta hai</span>
         if (it.isBuy && a.makingAmount > 0) arr.push(['Making (+)', `Rs. ${fmt(a.makingAmount)}`]);
         if (it.isBuy && a.taxAmount > 0) arr.push(['Tax / GST (+)', `Rs. ${fmt(a.taxAmount)}`]);
         if (!it.isBuy && a.deductAmount > 0) arr.push(['Refining + Margin (−)', `Rs. ${fmt(a.deductAmount)}`]);
+        if (!it.isBuy && a.perGramCutAmount > 0) arr.push(['Per Gram Cut (−)', `Rs. ${fmt(a.perGramCutAmount)}`]);
         if (a.stonePrice > 0) arr.push(['Nag / Stone Price (+)', `Rs. ${fmt(a.stonePrice)}`]);
 
         amountRows = `
@@ -2232,6 +2254,7 @@ Gold price sirf Net Gold pe lagta hai</span>
     document.getElementById('stonePrice').addEventListener('input', calculateItemPrice);
     document.getElementById('sellDiscountTola').addEventListener('input', calculateItemPrice);
     document.getElementById('sellDeductPercent').addEventListener('input', calculateItemPrice);
+    document.getElementById('sellPerGramCut').addEventListener('input', calculateItemPrice);
     document.getElementById('wastageValue').addEventListener('input', calculateItemPrice);
     document.getElementById('makingValue').addEventListener('input', calculateItemPrice);
     document.getElementById('taxRate').addEventListener('input', calculateItemPrice);
